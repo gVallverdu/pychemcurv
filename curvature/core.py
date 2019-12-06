@@ -4,9 +4,19 @@
 """
 This is the core module that provides the functions who computes the
 geometrical descriptors associated to the curvature.
+
+Notations
+---------
+
+
+A
+*(A)
+point B belongs to *(A)
+I : barycenter of points in *(A)
+
 """
 
-
+import warnings
 import numpy as np
 
 __author__ = "Germain Salvato-Vallverdu"
@@ -17,43 +27,169 @@ __email__ = "germain.vallverdu@univ-pau.fr"
 __status__ = "Development"
 __date__ = "June, 2018"
 
-__all__ = ["get_improper", "get_pyr_angle", "get_molecule_curvature",
-           "get_discrete_curvature", "get_pyr_distance"]
+# __all__ = ["get_improper", "get_pyr_angle", "get_pyr_distance",
+#            "get_angular_defect", "get_central_atom"]
 
 
-def get_improper(coords):
+def check_array(a, shape, dtype):
+    """Check array a and return a numpy array."
+
+    Args:
+        a: iterable to convert in numpy array
+        shape (tuple of int): if one value is negative, it is considered as a
+            min condition.
+        dtype: numpy type
     """
-    Assuming i is bonded to j, k and l, compute the improper angle between planes
-    defined by (i, j, k) and (j, k, l).
+    # convert in numpy array
+    try:
+        a = np.asarray(a, dtype=dtype)
+    except ValueError:
+        raise ValueError(f"Cannot convert {a} in a numpy array of float.")
 
+    # check shape
+    if np.all(np.array(shape) > 0):
+        if a.shape != shape:
+            raise ValueError(f"The shape of coordinates is {a.shape}."
+                             f" The expected shape is {shape}.")
+    else:
+        for idim, (dim, dim_a) in enumerate(zip(shape, a.shape), 1):
+            if dim < 0 and dim_a < -dim:
+                raise ValueError(f"The shape of coordinates is {a.shape}. "
+                                 f"The length in the dimension {idim} must "
+                                 f"be greater or equal to {-dim}.")
+            if 0 < dim != dim_a:
+                raise ValueError(f"The shape of coordinates is {a.shape}. "
+                                 f"The length in dimension {idim} must be "
+                                 f"equal to {dim}.")
+
+    return a
+
+
+def center_of_mass(coords, masses=None):
+    """Compute the center of mass of the points at coordinates `coords`.
+
+    Args:
+        coords (np.ndarray): (N, 3) matrix of the points in R^3
+        masses (np.ndarray): vector of length N with the masses
+
+    Returns:
+        The center of mass, a vector in R^3
+    """
+    if masses is None:
+        masses = np.ones(coords.shape[0])
+    return (coords * masses[:, np.newaxis]).sum(axis=0) / masses.sum()
+
+
+def get_best_fitting_plane(coords, masses=None):
+    """Given a set of N points in 3D space, compute the best fitting plane.
+    The function returns the vectors vecx and vecy which define a plane and
+    the vector u_norm, normal to the plane. In the case of 3 points, compute
+    the vectors from gram-schmidt orthonormalization.
+
+    Args:
+        coords (np.ndarray): (N, 3) matrix of the points in R^3
+        masses (np.ndarray): vector of length N with the masses
+    """
+    if masses is None:
+        masses = np.ones(coords.shape[0])
+    com = center_of_mass(coords, masses)
+
+    if coords.shape == (3, 3):
+        # the plane is exactly defined from 3 points
+
+        vecx = coords[1] - coords[0]
+        vecx /= np.linalg.norm(vecx)
+
+        # vecy, orthonormal with vecx
+        vecy = coords[2] - coords[0]
+        vecy -= np.dot(vecy, vecx) * vecx
+        vecy /= np.linalg.norm(vecy)
+
+        # normal vector
+        u_norm = np.cross(vecx, vecy)
+
+    else:
+        # get the best fitting plane from SVD.
+        _, _, (vecx, vecy, u_norm) = np.linalg.svd(coords - com)
+
+    return vecx, vecy, u_norm
+
+
+def regularize(a, star_a):
+    """Regularize the coordinates of the points in order to define a unique
+    distance between point A and all atoms belonging to *(A)."""
+
+    u = star_a - a
+    norm = np.linalg.norm(u, axis=1)
+    u /= norm[:, np.newaxis]
+
+    return a + u
+
+
+def get_central_atom(coords):
+    """Try to guess the central atom. The central atom is the one which is
+    bonded to all other atoms. Here we assume that the central atom is the
+    closest to the center of mass.
+
+    WARNINGS: This condition is not completely sufficient and can lead to wrong
+    results in certains particular case.
+
+    Args:
+        coords (np.ndarray): cartesian coordinates in R^3, shape (N x 3)
+
+    Returns:
+        The index of the central atom.
+    """
+    warnings.warn(("This function *tries* to return the central point from"
+                   " a given set of point but it may fail in some special "
+                   "case or specific geometries. Be careful!"),
+                  category=UserWarning)
+
+    com = center_of_mass(coords)
+    distances = np.sum((coords - com[np.newaxis, :])**2, axis=1)
+    return np.argmin(distances)
+    # distances = (coords[np.newaxis, :, :] - coords[:, np.newaxis, :])**2
+    # distances = np.sqrt(np.sum(distances, axis=2))
+    #
+    # return np.argmin(distances.sum(axis=1))
+
+
+def get_improper(a, star_a):
+    """Compute the improper angle between planes defined by atoms (i, j, k) and
+    (j, k, l). Atom A, is atom i and atoms i, j and k belong to *(A).
 
                   l
                   |
                   i
                  / \
-                j   k
+               j     k
 
     Args:
-        coords (4 x 3 array): Coordinnates of point i, j, k and l. i must be the first
+        a (np.ndarray): Cartesian coordinates of atom a
+        star_a (nd.array): (3x3) matrix of cartesian coordinates of atoms i, j, k
 
     Returns:
         improper angle (degrees)
     """
+    icoords = check_array(a, shape=(3,), dtype=np.float)
+    star_a = check_array(star_a, shape=(3, 3), dtype=np.float)
 
-    coords = np.array(coords)
-    if coords.shape != (4, 3):
-        raise ValueError("The shape of the input coordinates must be (4, 3) "
-                         "corresponding to 4 poinst in R^3.")
+    # if reorder:
+    #     # get central atom and put central atoms as first atom
+    #     iat = get_central_atom(coords)
+    #     coords[[0, iat]] = coords[[iat, 0]]
 
-    icoords, jcoords, kcoords, lcoords = coords
+    jcoords, kcoords, lcoords = star_a
 
-    v1 = kcoords - lcoords
-    v2 = jcoords - kcoords
-    v3 = icoords - jcoords
-    v23 = np.cross(v2, v3)  # perpendicular to j, k, l
-    v12 = np.cross(v1, v2)  # perpendicular to i, j, k
+    # compute vectors
+    vij = jcoords - icoords
+    vjk = kcoords - jcoords
+    vlk = kcoords - lcoords
+    m = np.cross(vij, vjk)  # perpendicular to ijk
+    n = np.cross(vlk, vjk)  # perpendicular to jkl
 
-    theta = np.arctan2(np.linalg.norm(v2) * np.dot(v1, v23), np.dot(v12, v23))
+    # compute the angle
+    theta = np.arctan2(np.dot(vij, n) * np.linalg.norm(vjk), np.dot(m, n))
 
     return np.degrees(theta)
 
@@ -80,185 +216,89 @@ def get_pyr_distance(coords):
     if coords.shape[1] != 3:
         raise ValueError("Input coordinates must correspond to point in R^3.")
 
-    # barycenter of the points *(A)
-    G = coords[1:, :].sum(axis=0) / coords[1:, :].shape[0]
+    _, _, u_norm = get_best_fitting_plane(coords[1:])
 
-    # Compute the best plane from SVD
-    _, _, (vecx, vecy, u_norm) = np.linalg.svd(coords[1:, :] - G)
-
-    return np.dot(coords[0, :] - G, u_norm)
+    return np.dot(coords[0, :] - center_of_mass(coords[1:, :]), u_norm)
 
 
-def get_pyr_distance2(coords):
-    """
-    Compute the distance between atom A and the average plane defined from
-    atoms *(A). `coords` is the (N x 3) matrix of the cartesian coordinates of
-    atoms A and *(A). Cartesian coordinates of atom A is the first line
-    `coords[0, :]` and cartesian coordinates of atoms *(A) are the next lines
-    `coords[1:, :]`.
+def get_pyr_angle(a, star_a):
+    """Compute the pyramidalization angle considering a pyramidal structure
+    defined from a set of points in R^3 (`coords`). Point A is the vertex of
+    the pyramid, other points belong to *(A).
 
     Args:
-        coords (N x 3 array): cartesian coordinnates in R^3.
+        a (np.ndarray): Cartesian coordinates of atom a
+        star_a (nd.array): (N x 3) cartesian coordinates of atoms in *(A)
 
     Returns:
-        distance (float) in the same unit as the input coordinates.
+        The pyramidalization angle in degrees
     """
+    # check input coords
+    a = check_array(a, dtype=np.float, shape=(3,))
+    star_a = check_array(star_a, dtype=np.float, shape=(-3, 3))
 
-    coords = np.array(coords)
-    if coords.shape[0] < 4:
-        raise ValueError("Input coordinates must correspond to at least 4"
-                         " points in R^3.")
-    if coords.shape[1] != 3:
-        raise ValueError("Input coordinates must correspond to point in R^3.")
+    # regularize coords
+    star_a = regularize(a, star_a)
 
-    # barycenter of the points *(A)
-    G = coords[1:, :].sum(axis=0) / coords[1:, :].shape[0]
+    # get the normal vector to the plane defined from *(A)
+    _, _, u_norm = get_best_fitting_plane(star_a)
 
-    # Compute the best plane from SVD
-    _, _, (vecx, vecy, u_norm) = np.linalg.svd(coords[1:, :] - G)
+    # change the direction of u_norm to be the same as IA.
+    IA = a - center_of_mass(star_a)
+    u_norm = -u_norm if np.dot(IA, u_norm) < 0 else u_norm
 
-    return np.dot(coords[0, :] - G, u_norm)
+    v = star_a[0] - a
+    v /= np.linalg.norm(v)
+    theta = np.degrees(np.arccos(np.dot(v, u_norm)))
 
-def get_pyr_angle(coords):
+    return theta - 90.
+
+
+def get_angular_defect(a, star_a):
     """
-    Assuming the first point is linked to the followings, compute the pyramidalization
-    following the definition of Haddon et al. The anlge of pyramidalization is
-    computed as the angle between the vector normal to the (j, k, l) plane and the
-    bonds between i and j, k and l.
+    Compute the angular defect as a measure of the discrete curvature around a
+    vertex, point A in R^3, and points B in R^3 belonging to *(A) and bonded to
+    A.
+    The function first looks for the best fit plane of points in *(A)
+    and sorts that points in order to compute the angles between the edges
+    connected to the vertex (A).
 
     Args:
-        coords (4 x 3 array): Coordinnates of the in R^3.
-
-    Returns:
-        list of float corresponding to the angles
-    """
-
-    coords = np.array(coords)
-    if coords.shape != (4, 3):
-        raise ValueError("The shape of the input coordinates must be (4, 3) "
-                         "corresponding to 4 poinst in R^3.")
-
-    # barycenter of the points
-    G = coords[1:, :].sum(axis=0) / coords[1:, :].shape[0]
-
-    # Cpmpute the best plane from SVD
-    _, _, (vecx, vecy, u_norm) = np.linalg.svd(coords[1:, :] - G)
-
-    # change the
-    GI = coords[0, :] - G
-    if np.dot(GI, u_norm) < 0:
-        u_norm = - u_norm
-
-    angles = list()
-    for coord in coords[1:]:
-        v = coord - coords[0, :]
-        v /= np.linalg.norm(v)
-        cos = np.dot(u_norm, v)
-        angles.append(np.degrees(np.arccos(cos)))
-
-    haddon = np.array(angles).mean() - 90.0
-
-    return haddon, angles
-
-
-def get_molecule_curvature(mol, rcut=2.0):
-    """
-    Compute the curvature on all atoms in the molecule. For each atom, the
-    discrete curvature is computed as the angular defect. Each atom is considered
-    as a vertex, and the edges are determined by atoms bonded to the vertex. The
-    list of edges is build using rcut as a distance cut-off.
-
-    Args:
-        mol (mg.Molecule): pymatgen molecule object
-        rcut (float): a distance cut-off to determine the edges around the vertex
-
-    Returns
-        a Molecule object with the following properties:
-            'curvature': the curvatures
-            'neighbors': the number of neighbors of each atom
-            'distances': the average distances of neighbors
-    """
-
-    mol = mol.copy()
-    curvatures = list()
-    nneighbors = list()
-    distances = list()
-    for atom in mol:
-        coords = atom.coords
-        n = 0
-        ave_distance = 0
-        for neighbor, distance in mol.get_neighbors(atom, rcut):
-            coords = np.row_stack((coords, neighbor.coords))
-            n += 1
-            ave_distance += distance
-
-        distances.append(ave_distance / n)
-        nneighbors.append(n)
-        curvatures.append(get_discrete_curvature(coords))
-
-    mol.add_site_property("curvature", curvatures)
-    mol.add_site_property("neighbors", nneighbors)
-    mol.add_site_property("distances", distances)
-
-    return mol
-
-
-def get_discrete_curvature(coords):
-    """
-    Compute the discrete curvature (angular defect) around a vertex of a set of
-    points in R^3. The function works for any number of points greater than 4:
-    one vertex and 3 points surrounding the vertex defining the edges. The needed
-    data are the list of the coordinates of the points, the first one being the
-    vertex's one.
-    The function first looks for the best fit plane of the points surrounding the
-    vertex and sorts that points in order to compute the angles between the edges
-    connected to the vertex and the the angular defect.
-
-    Args:
-        coords (ndarray N x 3): Coordinates of the points. The first one is the vertex.
+        a (np.ndarray): Cartesian coordinates of atom a
+        star_a (nd.array): (N x 3) cartesian coordinates of atoms in *(A)
 
     Returns
         curvature (float)
     """
-    coords = np.array(coords)
+    # check and regularize coords
+    a = check_array(a, shape=(3,), dtype=np.float)
+    star_a = check_array(star_a, shape=(-3, 3), dtype=np.float)
+    star_a = regularize(a, star_a)
 
-    if coords.shape[1] != 3:
-        raise ValueError("3D coordinates are needed.")
+    # Compute the best plane from SVD
+    vecx, vecy, u_norm = get_best_fitting_plane(star_a)
 
-    npts = coords.shape[0]
-    if npts < 4:
-        raise ValueError("Not enough points to compute curvature")
-
-    # barycenter of the points
-    G = coords[1:, :].sum(axis=0) / coords[1:, :].shape[0]
-
-    # Cpmpute the best plane from SVD
-    _, _, (vecx, vecy, u_norm) = np.linalg.svd(coords[1:, :] - G)
-
-    # compute all angles with vectorx
-    angles = list()
-    for points in coords[1:, :]:
-        u = points - G
-        u /= np.linalg.norm(u)
-
-        cos = np.dot(vecx, u)
-        if np.dot(vecy, u) > 0:
-            angles.append(np.degrees(np.arccos(cos)))
-        else:
-            angles.append(360 - np.degrees(np.arccos(cos)))
+    # compute all angles with vecx in order to sort atoms of *(A)
+    u = star_a - center_of_mass(star_a)
+    norm = np.linalg.norm(u, axis=1)
+    u /= norm[:, np.newaxis]
+    cos = np.dot(u, vecx)
+    angles = np.where(np.dot(u, vecy) > 0,
+                      np.degrees(np.arccos(cos)),
+                      360 - np.degrees(np.arccos(cos)))
 
     # sort points according to angles
-    idx = np.arange(1, npts)
+    idx = np.arange(angles.size)
     idx = idx[np.argsort(angles)]
     idx = np.append(idx, idx[0])
 
     # compute curvature
     curvature = 360
     for i, j in np.column_stack([idx[:-1], idx[1:]]):
-        u = coords[i, :] - coords[0, :]
+        u = star_a[i, :] - a
         u /= np.linalg.norm(u)
 
-        v = coords[j, :] - coords[0, :]
+        v = star_a[j, :] - a
         v /= np.linalg.norm(v)
 
         cos = np.dot(u, v)

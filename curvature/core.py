@@ -77,7 +77,41 @@ def center_of_mass(coords, masses=None):
     """
     if masses is None:
         masses = np.ones(coords.shape[0])
-    return (coords * masses[:, np.newaxis]).sum(axis=0) / masses.sum()
+    return np.sum(coords * masses[:, np.newaxis], axis=0) / masses.sum()
+
+
+def circum_center(coords):
+    """Compute the coordinates of the center of the circumscribed circle from
+    three points in R^3.
+    
+    Args:
+        coords (ndarray): (3x3) matrix
+
+    Returns
+        The coordinates of the center of the cicumscribed circle
+    """
+    # define a local frame (origin, u, v, w)
+    origin = coords[0].copy()
+    u = coords[1] - origin
+    u /= np.linalg.norm(u)
+    v = coords[2] - origin
+    v = v - np.dot(u, v) * u
+    v /= np.linalg.norm(v)
+    w = np.cross(u, v)
+
+    # move points to the new frame
+    P = np.array([u, v, w])
+    coords = np.dot(P, np.transpose(coords - origin))
+
+    # look for the center
+    a, b, c = np.transpose(coords)[:, :2]
+    M = np.array([b - a, c - b])
+    B = 1 / 2 * np.array([np.sum(b**2 - a**2), np.sum(c**2 - b**2)])
+    X = np.dot(np.linalg.inv(M), B)
+    X = np.append(X, [0.])
+
+    # go back in the initial frame and return
+    return np.dot(P.transpose(), X) + origin
 
 
 def get_best_fitting_plane(coords, masses=None):
@@ -194,36 +228,27 @@ def get_improper(a, star_a):
     return np.degrees(theta)
 
 
-def get_pyr_distance(coords):
-    """
-    Compute the distance between atom A and the average plane defined from
-    atoms *(A). `coords` is the (N x 3) matrix of the cartesian coordinates of
-    atoms A and *(A). Cartesian coordinates of atom A is the first line
-    `coords[0, :]` and cartesian coordinates of atoms *(A) are the next lines
-    `coords[1:, :]`.
+def get_pyr_distance(a, star_a):
+    """Compute the distance between atom A and the plane define by *(A).
 
     Args:
-        coords (N x 3 array): cartesian coordinnates in R^3.
+        a (np.ndarray): Cartesian coordinates of atom a
+        star_a (nd.array): (N x 3) cartesian coordinates of atoms in *(A)
 
     Returns:
         distance (float) in the same unit as the input coordinates.
     """
+    a = check_array(a, shape=(3,), dtype=np.float)
+    star_a = check_array(star_a, shape=(-3, 3), dtype=np.float)
 
-    coords = np.array(coords)
-    if coords.shape[0] < 4:
-        raise ValueError("Input coordinates must correspond to at least 4"
-                         " points in R^3.")
-    if coords.shape[1] != 3:
-        raise ValueError("Input coordinates must correspond to point in R^3.")
+    _, _, n_a = get_best_fitting_plane(star_a)
 
-    _, _, u_norm = get_best_fitting_plane(coords[1:])
-
-    return np.dot(coords[0, :] - center_of_mass(coords[1:, :]), u_norm)
+    return np.dot(a - center_of_mass(star_a), n_a)
 
 
 def get_pyr_angle(a, star_a):
     """Compute the pyramidalization angle considering a pyramidal structure
-    defined from a set of points in R^3 (`coords`). Point A is the vertex of
+    defined from a set of points in R^3. Point A is the vertex of
     the pyramid, other points belong to *(A).
 
     Args:
@@ -241,15 +266,16 @@ def get_pyr_angle(a, star_a):
     star_a = regularize(a, star_a)
 
     # get the normal vector to the plane defined from *(A)
-    _, _, u_norm = get_best_fitting_plane(star_a)
+    _, _, n_a = get_best_fitting_plane(star_a)
 
-    # change the direction of u_norm to be the same as IA.
+    # change the direction of n_a to be the same as IA.
     IA = a - center_of_mass(star_a)
-    u_norm = -u_norm if np.dot(IA, u_norm) < 0 else u_norm
+    print(f"IA.n_a = {np.dot(IA / np.linalg.norm(IA), n_a)}")
+    n_a = -n_a if np.dot(IA, n_a) < 0 else n_a
 
     v = star_a[0] - a
     v /= np.linalg.norm(v)
-    theta = np.degrees(np.arccos(np.dot(v, u_norm)))
+    theta = np.degrees(np.arccos(np.dot(v, n_a)))
 
     return theta - 90.
 
@@ -276,7 +302,7 @@ def get_angular_defect(a, star_a):
     star_a = regularize(a, star_a)
 
     # Compute the best plane from SVD
-    vecx, vecy, u_norm = get_best_fitting_plane(star_a)
+    vecx, vecy, _ = get_best_fitting_plane(star_a)
 
     # compute all angles with vecx in order to sort atoms of *(A)
     u = star_a - center_of_mass(star_a)
@@ -293,7 +319,7 @@ def get_angular_defect(a, star_a):
     idx = np.append(idx, idx[0])
 
     # compute curvature
-    curvature = 360
+    ang_defect = 360
     for i, j in np.column_stack([idx[:-1], idx[1:]]):
         u = star_a[i, :] - a
         u /= np.linalg.norm(u)
@@ -302,6 +328,58 @@ def get_angular_defect(a, star_a):
         v /= np.linalg.norm(v)
 
         cos = np.dot(u, v)
-        curvature -= np.degrees(np.arccos(cos))
+        ang_defect-= np.degrees(np.arccos(cos))
 
-    return curvature
+    return ang_defect
+
+
+def get_spherical_curvature(a, star_a):
+    """Compute the spherical curvature associated to the osculating sphere at
+    a give point A of a molecule bonded to atoms B belonging to *(A).
+
+    Args:
+        a (np.ndarray): Cartesian coordinates of atom a
+        star_a (nd.array): (3 x 3) cartesian coordinates of atoms in *(A)
+
+    Returns
+        curvature (float)
+    """
+    # check and regularize coords
+    a = check_array(a, shape=(3,), dtype=np.float)
+    star_a = check_array(star_a, shape=(3, 3), dtype=np.float)
+
+    # plane *(A)
+    point_O = circum_center(star_a)
+    _, _, n_a = get_best_fitting_plane(star_a)
+
+    # needed length
+    l = np.linalg.norm(star_a[0] - point_O)
+    z_A = np.dot(a - point_O, n_a)
+    L = np.sqrt(np.linalg.norm(a - point_O)**2 - z_A**2)
+
+    # spherical curvature
+    kappa = 1 / np.sqrt(l**2 + (L**2 + z_A**2 - l**2)**2 / (4 * z_A**2))
+
+    return kappa
+
+
+def get_hybridization_coeff(pyrA, radians=False):
+    """Compute the hybridization coefficient of the h_pi hybrid orbital that
+    is directed along the POAV vector, normal to *(A).
+
+    Args:
+        pyrA (float): the pyramidalization angle, check radians for the unit.
+        radians (bool): if True, pyrA is given in radians.
+    
+    Returns:
+        c_pi and lambda_pi the coefficient of the s and p_z atomic orbitals
+        respectively.
+    """
+    r_pyrA = pyrA if radians else np.radians(pyrA)
+
+    c_pi = np.sqrt(2) * np.tan(r_pyrA)
+    lambda_pi = np.sqrt(1 - 2 * np.tan(r_pyrA) ** 2)
+    
+    return c_pi, lambda_pi
+
+

@@ -31,7 +31,7 @@ __email__ = "germain.vallverdu@univ-pau.fr"
 __status__ = "Development"
 __date__ = "June, 2018"
 
-from core import *
-import utils
+from .core import *
+from .utils import *
 
 

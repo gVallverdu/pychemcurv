@@ -31,14 +31,14 @@ __date__ = "June, 2018"
 #            "get_angular_defect", "get_central_atom"]
 
 
-def check_array(a, shape, dtype):
+def check_array(a, shape, dtype=np.float):
     """Check array a and return a numpy array."
 
     Args:
         a: iterable to convert in numpy array
         shape (tuple of int): if one value is negative, it is considered as a
             min condition.
-        dtype: numpy type
+        dtype: a numpy type, default is `np.float`
     """
     # convert in numpy array
     try:
@@ -66,7 +66,8 @@ def check_array(a, shape, dtype):
 
 
 def center_of_mass(coords, masses=None):
-    """Compute the center of mass of the points at coordinates `coords`.
+    """Compute the center of mass of the points at coordinates `coords` with
+    massess `masses`.
 
     Args:
         coords (np.ndarray): (N, 3) matrix of the points in R^3
@@ -82,47 +83,42 @@ def center_of_mass(coords, masses=None):
 
 def circum_center(coords):
     """Compute the coordinates of the center of the circumscribed circle from
-    three points in R^3.
+    three points A, B and C in R^3.
     
     Args:
-        coords (ndarray): (3x3) matrix
+        coords (ndarray): (3x3) cartesian coordinates of points A, B and C. 
+            One point per line.
 
     Returns
         The coordinates of the center of the cicumscribed circle
     """
-    # define a local frame (origin, u, v, w)
-    origin = coords[0].copy()
-    u = coords[1] - origin
-    u /= np.linalg.norm(u)
-    v = coords[2] - origin
-    v = v - np.dot(u, v) * u
-    v /= np.linalg.norm(v)
-    w = np.cross(u, v)
+    a, b, c = coords
 
-    # move points to the new frame
-    P = np.array([u, v, w])
-    coords = np.dot(P, np.transpose(coords - origin))
+    ABvAC = np.cross(b - a, c - a)
+    M = np.array([b - a, c - a, ABvAC])
+    B = np.array([np.dot(b - a, (b + a) / 2),
+                  np.dot(c - a, (c + a) / 2),
+                  np.dot(ABvAC, a)])
 
-    # look for the center
-    a, b, c = np.transpose(coords)[:, :2]
-    M = np.array([b - a, c - b])
-    B = 1 / 2 * np.array([np.sum(b**2 - a**2), np.sum(c**2 - b**2)])
-    X = np.dot(np.linalg.inv(M), B)
-    X = np.append(X, [0.])
-
-    # go back in the initial frame and return
-    return np.dot(P.transpose(), X) + origin
+    return np.dot(np.linalg.inv(M), B)
 
 
-def get_best_fitting_plane(coords, masses=None):
-    """Given a set of N points in 3D space, compute the best fitting plane.
-    The function returns the vectors vecx and vecy which define a plane and
-    the vector u_norm, normal to the plane. In the case of 3 points, compute
-    the vectors from gram-schmidt orthonormalization.
+def get_plane(coords, masses=None):
+    """Given a set of N points in 3D space, compute an orthonormal basis of 
+    vectors, the first two belonging to the plane and the third one being normal 
+    to the plane. In the particular case where N equal 3, there is an exact
+    definition of the plane as the three points define an unique plan.
+    
+    If N = 3, use a gram-schmidt orthonormalization to compute the vectors. If
+    N > 3, the orthonormal basis is obtained from SVD.
 
     Args:
         coords (np.ndarray): (N, 3) matrix of the points in R^3
         masses (np.ndarray): vector of length N with the masses
+    
+    Returns:
+        The function returns the orthonormal basis (vecx, vecy, n_a), vector
+        n_a being normal to the plane.
     """
     if masses is None:
         masses = np.ones(coords.shape[0])
@@ -130,7 +126,6 @@ def get_best_fitting_plane(coords, masses=None):
 
     if coords.shape == (3, 3):
         # the plane is exactly defined from 3 points
-
         vecx = coords[1] - coords[0]
         vecx /= np.linalg.norm(vecx)
 
@@ -140,18 +135,26 @@ def get_best_fitting_plane(coords, masses=None):
         vecy /= np.linalg.norm(vecy)
 
         # normal vector
-        u_norm = np.cross(vecx, vecy)
+        n_a = np.cross(vecx, vecy)
 
     else:
         # get the best fitting plane from SVD.
-        _, _, (vecx, vecy, u_norm) = np.linalg.svd(coords - com)
+        _, _, (vecx, vecy, n_a) = np.linalg.svd(coords - com)
 
-    return vecx, vecy, u_norm
+    return vecx, vecy, n_a
 
 
 def regularize(a, star_a):
-    """Regularize the coordinates of the points in order to define a unique
-    distance between point A and all atoms belonging to *(A)."""
+    """Regularize the coordinates of the points in *(A) such as all distances 
+    between points in *(A) and A are equal.
+    
+    Args:
+        a (np.ndarray): Cartesian coordinates of atom a
+        star_a (nd.array): Cartesian coordinates of atoms in *(A)
+
+    Returns
+        new coordinates of star_a
+    """
 
     u = star_a - a
     norm = np.linalg.norm(u, axis=1)
@@ -229,7 +232,8 @@ def get_improper(a, star_a):
 
 
 def get_pyr_distance(a, star_a):
-    """Compute the distance between atom A and the plane define by *(A).
+    """Compute the distance between atom A and the plane define by *(A) or
+    the best fitting plane of *(A).
 
     Args:
         a (np.ndarray): Cartesian coordinates of atom a
@@ -241,7 +245,7 @@ def get_pyr_distance(a, star_a):
     a = check_array(a, shape=(3,), dtype=np.float)
     star_a = check_array(star_a, shape=(-3, 3), dtype=np.float)
 
-    _, _, n_a = get_best_fitting_plane(star_a)
+    _, _, n_a = get_plane(star_a)
 
     return np.dot(a - center_of_mass(star_a), n_a)
 
@@ -266,11 +270,10 @@ def get_pyr_angle(a, star_a):
     star_a = regularize(a, star_a)
 
     # get the normal vector to the plane defined from *(A)
-    _, _, n_a = get_best_fitting_plane(star_a)
+    _, _, n_a = get_plane(star_a)
 
     # change the direction of n_a to be the same as IA.
     IA = a - center_of_mass(star_a)
-    print(f"IA.n_a = {np.dot(IA / np.linalg.norm(IA), n_a)}")
     n_a = -n_a if np.dot(IA, n_a) < 0 else n_a
 
     v = star_a[0] - a
@@ -301,8 +304,8 @@ def get_angular_defect(a, star_a):
     star_a = check_array(star_a, shape=(-3, 3), dtype=np.float)
     star_a = regularize(a, star_a)
 
-    # Compute the best plane from SVD
-    vecx, vecy, _ = get_best_fitting_plane(star_a)
+    # get P the plane of *(A)
+    vecx, vecy, _ = get_plane(star_a)
 
     # compute all angles with vecx in order to sort atoms of *(A)
     u = star_a - center_of_mass(star_a)
@@ -350,7 +353,7 @@ def get_spherical_curvature(a, star_a):
 
     # plane *(A)
     point_O = circum_center(star_a)
-    _, _, n_a = get_best_fitting_plane(star_a)
+    _, _, n_a = get_plane(star_a)
 
     # needed length
     l = np.linalg.norm(star_a[0] - point_O)
@@ -363,7 +366,7 @@ def get_spherical_curvature(a, star_a):
     return kappa
 
 
-def get_hybridization_coeff(pyrA, radians=False):
+def get_hybridization_coeff(pyrA=None, a=None, star_a=None, radians=False):
     """Compute the hybridization coefficient of the h_pi hybrid orbital that
     is directed along the POAV vector, normal to *(A).
 
@@ -375,11 +378,23 @@ def get_hybridization_coeff(pyrA, radians=False):
         c_pi and lambda_pi the coefficient of the s and p_z atomic orbitals
         respectively.
     """
-    r_pyrA = pyrA if radians else np.radians(pyrA)
+    if pyrA is not None:
+        # compute hybridization coeff from pyrA angle
+        r_pyrA = pyrA if radians else np.radians(pyrA)
 
-    c_pi = np.sqrt(2) * np.tan(r_pyrA)
-    lambda_pi = np.sqrt(1 - 2 * np.tan(r_pyrA) ** 2)
+        c_pi = np.sqrt(2) * np.tan(r_pyrA)
+        lambda_pi = np.sqrt(1 - 2 * np.tan(r_pyrA) ** 2)
+        
+        return c_pi, lambda_pi
+
+    elif a is not None and star_a is not None:
+        # compute first pyramidalization angle and the hybridization coefficients
+        pyrA = get_pyr_angle(a, star_a)
+
+        return get_hybridization_coeff(pyrA)
     
-    return c_pi, lambda_pi
+    else:
+        raise ValueError("You have to provide either pyrA or both a and star_a.")
+    
 
 

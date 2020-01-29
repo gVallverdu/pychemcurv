@@ -27,8 +27,10 @@ __email__ = "germain.vallverdu@univ-pau.fr"
 __status__ = "Development"
 __date__ = "June, 2018"
 
-# __all__ = ["get_improper", "get_pyr_angle", "get_pyr_distance",
-#            "get_angular_defect", "get_central_atom"]
+__all__ = ["get_improper", "get_pyr_angle", "get_pyr_distance",
+           "get_angular_defect", "get_spherical_curvature",
+           "get_hybridization_coeff", "get_hybridization_numbers",
+           "hybridization"]
 
 
 def check_array(a, shape, dtype=np.float):
@@ -211,6 +213,8 @@ def get_improper(a, star_a):
     icoords = check_array(a, shape=(3,), dtype=np.float)
     star_a = check_array(star_a, shape=(3, 3), dtype=np.float)
 
+    star_a = regularize(a, star_a)
+
     # if reorder:
     #     # get central atom and put central atoms as first atom
     #     iat = get_central_atom(coords)
@@ -225,8 +229,16 @@ def get_improper(a, star_a):
     m = np.cross(vij, vjk)  # perpendicular to ijk
     n = np.cross(vlk, vjk)  # perpendicular to jkl
 
+    # print("vij ", vij)
+    # print("vjk ", vjk)
+    # print("vlk ", vlk)
+    # print("m   ", m)
+    # print("n   ", n)
+
     # compute the angle
     theta = np.arctan2(np.dot(vij, n) * np.linalg.norm(vjk), np.dot(m, n))
+    # theta2 = np.arccos(np.dot(m, n) / np.linalg.norm(m) / np.linalg.norm(n))
+    # print(np.degrees(theta), np.degrees(theta2))
 
     return np.degrees(theta)
 
@@ -247,7 +259,7 @@ def get_pyr_distance(a, star_a):
 
     _, _, n_a = get_plane(star_a)
 
-    return np.dot(a - center_of_mass(star_a), n_a)
+    return np.abs(np.dot(a - center_of_mass(star_a), n_a))
 
 
 def get_pyr_angle(a, star_a):
@@ -372,6 +384,8 @@ def get_hybridization_coeff(pyrA=None, a=None, star_a=None, radians=False):
 
     Args:
         pyrA (float): the pyramidalization angle, check radians for the unit.
+        a (np.ndarray): Cartesian coordinates of atom a
+        star_a (nd.array): (3 x 3) cartesian coordinates of atoms in *(A)
         radians (bool): if True, pyrA is given in radians.
     
     Returns:
@@ -381,6 +395,11 @@ def get_hybridization_coeff(pyrA=None, a=None, star_a=None, radians=False):
     if pyrA is not None:
         # compute hybridization coeff from pyrA angle
         r_pyrA = pyrA if radians else np.radians(pyrA)
+
+        # check domain definition of lambda_pi
+        if np.tan(r_pyrA) > 1 / np.sqrt(2):
+            raise ValueError(f"pyrA = {np.degrees(r_pyrA)} degrees "
+                              "lambda_pi is not define.")
 
         c_pi = np.sqrt(2) * np.tan(r_pyrA)
         lambda_pi = np.sqrt(1 - 2 * np.tan(r_pyrA) ** 2)
@@ -397,4 +416,65 @@ def get_hybridization_coeff(pyrA=None, a=None, star_a=None, radians=False):
         raise ValueError("You have to provide either pyrA or both a and star_a.")
     
 
+def get_hybridization_numbers(pyrA=None, a=None, star_a=None, radians=False):
+    """Compute the hybridization numbers m and n corresponding to atom A. The
+    number m is linked to the hybridization coefficients and n = 3m + 2.
 
+    Args:
+        pyrA (float): the pyramidalization angle, check radians for the unit.
+        a (np.ndarray): Cartesian coordinates of atom a
+        star_a (nd.array): (3 x 3) cartesian coordinates of atoms in *(A)
+        radians (bool): if True, pyrA is given in radians.
+    
+    Returns:
+        m and n
+    """
+    if pyrA is not None:
+        # compute hybridization coeff from pyrA angle
+        c_pi, lambda_pi = get_hybridization_coeff(pyrA, radians=radians)
+
+        m = (c_pi / lambda_pi) ** 2
+        n = 3 * m + 2
+        return m, n
+
+    elif a is not None and star_a is not None:
+        # compute first pyramidalization angle and then hybridization numbers
+        pyrA = get_pyr_angle(a, star_a)
+
+        return get_hybridization_numbers(pyrA)
+    
+    else:
+        raise ValueError("You have to provide either pyrA or both a and star_a.")
+
+
+def hybridization(pyrA=None, a=None, star_a=None, radians=False):
+    """Compute the hybridization of one atom.
+
+    Args:
+        pyrA (float): the pyramidalization angle, check radians for the unit.
+        a (np.ndarray): Cartesian coordinates of atom a
+        star_a (nd.array): (3 x 3) cartesian coordinates of atoms in *(A)
+        radians (bool): if True, pyrA is given in radians.
+
+        s^{1-C_pi^2} p^{n-3m+C_pi^2} 
+        s p^{(n - 3 m + C_pi^2) / (1 - C_pi^2)}
+    
+    Returns:
+        h the coefficient of p in (s p^h)
+    """
+    if pyrA is not None:
+        # compute hybridization coeff from pyrA angle
+        c_pi, _ = get_hybridization_coeff(pyrA, radians=radians)
+        m, n = get_hybridization_numbers(pyrA, radians=radians)
+
+        p_coeff = (n - 3 * m + c_pi ** 2) / (1 - c_pi ** 2)
+        return p_coeff
+
+    elif a is not None and star_a is not None:
+        # compute first pyramidalization angle and then hybridization numbers
+        pyrA = get_pyr_angle(a, star_a)
+
+        return get_hybridization_numbers(pyrA)
+    
+    else:
+        raise ValueError("You have to provide either pyrA or both a and star_a.")

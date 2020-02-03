@@ -191,9 +191,12 @@ class VertexAtom:
     improper angle and the spherical curvature are computed only if there
     are exactly three atoms B belonging to *(A). If the number of atoms B is
     wrong, `np.nan` is returned.
+
+    Angles are return in radians. The pyramidalization angle is return in 
+    degrees (`self.pyrA`) or in radians (`self.pyrA_r`).
     """
 
-    def __init__(self, a, star_a, ang_unit=Units.degrees):
+    def __init__(self, a, star_a):
         """
         Define atom A, one vertex of the squeleton of a given molecule and atoms
         B belonging to *(A). The unit of the angles computed in this class are 
@@ -203,8 +206,6 @@ class VertexAtom:
         Args:
             a (np.ndarray): cartesian coordinates of atom a in R^3 
             star_a (nd.array): (N x 3) cartesian coordinates of atoms in *(A)
-            ang_unit (Units): Units.degrees or Units.radians. Define the unit of
-                the returned angles.
         """
         try:
             self._a = np.array(a, dtype=np.float64).reshape(3)
@@ -219,15 +220,6 @@ class VertexAtom:
             print("*A, star_a = ", star_a)
             raise ValueError("Cannot convert star_a in a numpy array of floats"
                              " with a shape (N, 3).")
-
-        if isinstance(ang_unit, Units) and ang_unit in Units:
-            self.ang_unit = ang_unit
-        else:
-            self.ang_unit = Units.degrees
-
-    def _rad2deg(self, value):
-        """ Return value in degrees or radians depending on self.ang_units """
-        return value if self.ang_unit == Units.radians else np.degrees(value)
 
     @property
     def a(self):
@@ -293,7 +285,7 @@ class VertexAtom:
         # theta2 = np.arccos(np.dot(m, n) / np.linalg.norm(m) / np.linalg.norm(n))
         # print(np.degrees(theta), np.degrees(theta2))
 
-        return self._rad2deg(theta)
+        return theta
 
     @property
     def pyr_distance(self):
@@ -313,11 +305,12 @@ class VertexAtom:
         return np.abs(np.dot(self._a - com, n_a))
 
     @property
-    def pyrA(self):
-        """Compute the pyramidalization angle considering a pyramidal structure
-        defined from a set of points in R^3 such as point A is the vertex of
-        the pyramid and other points belong to *(A).
+    def pyrA_r(self):
+        """ Return the pyramidalization angle in radians.
+        A pyramidal structure is assumed such as point A is the vertex of the 
+        pyramid and other points belong to *(A).
         """
+
         # check input coords
         if self._star_a.shape[0] < 3:
             return np.nan
@@ -334,13 +327,21 @@ class VertexAtom:
         v /= np.linalg.norm(v)
         pyrA = np.arccos(np.dot(v, n_a)) - np.pi / 2
 
-        return self._rad2deg(pyrA)
+        return pyrA
+
+    @property
+    def pyrA(self):
+        """ Return the pyramidalization angle in degrees.
+        A pyramidal structure is assumed such as point A is the vertex of the 
+        pyramid and other points belong to *(A).
+        """
+        return np.degrees(self.pyrA_r)
 
     @property
     def angular_defect(self):
         """
         Compute the angular defect as a measure of the discrete curvature around 
-        a vertex, point A in R^3, and points B in R^3, bonded to point A, 
+        the vertex, point A in R^3, and points B in R^3, bonded to point A, 
         belonging to *(A).
 
         The calculation first looks for the best fitting plane of points 
@@ -382,7 +383,7 @@ class VertexAtom:
             cos = np.dot(u, v)
             ang_defect -= np.arccos(cos)
 
-        return self._rad2deg(ang_defect)
+        return ang_defect
 
     @property
     def spherical_curvature(self):
@@ -413,14 +414,15 @@ class VertexAtom:
 
         return kappa
 
-    def as_dict(self):
+    def as_dict(self, unit=Units.radians):
         """ Return a dict version of all local quantities computed in this
         class. """
+        radians = unit == Units.radians
         data = {
-            "pyrA": self.pyrA,
+            "pyrA": self.pyrA_r if radians else self.pyrA,
             "spherical_curvature": self.spherical_curvature,
-            "angular_defect": self.angular_defect,
-            "improper": self.improper,
+            "angular_defect": self.angular_defect if radians else np.degrees(self.angular_defect),
+            "improper": self.improper if radians else np.degrees(self.improper),
             "pyr_distance": self.pyr_distance
         }
         return data
@@ -447,7 +449,7 @@ class Hybridization:
             self._pyrA = pyrA if radians else np.radians(pyrA)
         elif vertex is not None:
             if isinstance(vertex, VertexAtom):
-                self._pyrA = vertex.pyr_angle
+                self._pyrA = vertex.pyrA_r
             else:
                 raise TypeError("vertex must be of type VertexAtom")
         else:
@@ -496,11 +498,12 @@ class Hybridization:
 
     @property
     def hybridization(self):
-        """Compute the hybridization such as 
-
-           $s p^{(n - 3 m + C_pi^2) / (1 - C_pi^2)}$         
+        """ 
+        Compute the hybridization such as s p^{(2 + C_pi^2) / (1 - C_pi^2)}.
+        This quantity corresponds to the amount of pz AO in the system sigma
+        and corresponds to the $\tilde{n}$ value defined by Haddon.
         """
-        return (self.n - 3 * self.m + self.c_pi ** 2) / (1 - self.c_pi ** 2)
+        return (2 + self.c_pi ** 2) / (1 - self.c_pi ** 2)
 
     def as_dict(self):
         """ 

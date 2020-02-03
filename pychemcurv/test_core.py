@@ -18,11 +18,11 @@ class VertexAtomTests(unittest.TestCase):
     def setUp(self):
         self.theta_sp3 = np.arccos(-1 / 3)
         self.theta_sp2 = np.pi / 2
-        l = 1.3
+        self.l = 1.3
 
         # sp3 pyramid
-        coords = [[0, 0, -l * np.cos(self.theta_sp3)]]
-        IB = l * np.sin(self.theta_sp3)
+        coords = [[0, 0, -self.l * np.cos(self.theta_sp3)]]
+        IB = self.l * np.sin(self.theta_sp3)
         for angle in [0, 2 * np.pi / 3, 4 * np.pi / 3]:
             coords.append([IB * np.cos(angle), IB * np.sin(angle), 0])
         coords = np.array(coords, dtype=np.float64)
@@ -31,7 +31,7 @@ class VertexAtomTests(unittest.TestCase):
         # sp2 case
         coords = [[0, 0, 0]]
         for angle in [0, 2 * np.pi / 3, 4 * np.pi / 3]:
-            coords.append([l * np.cos(angle), l * np.sin(angle), 0])
+            coords.append([self.l * np.cos(angle), self.l * np.sin(angle), 0])
         coords = np.array(coords, dtype=np.float64)
         self.va_sp2 = VertexAtom(coords[0], coords[1:])
 
@@ -52,7 +52,7 @@ class VertexAtomTests(unittest.TestCase):
     def test_angular_defect(self):
         ang_sp3 = np.degrees(np.arccos(- 1 / 3))
         self.assertAlmostEqual(self.va_sp3.angular_defect,
-                              360 - 3 * ang_sp3)
+                               360 - 3 * ang_sp3)
         self.assertAlmostEqual(self.va_sp2.angular_defect, 0)
         self.assertAlmostEqual(self.va_rand.angular_defect, 29.83127456)
 
@@ -65,6 +65,12 @@ class VertexAtomTests(unittest.TestCase):
         self.assertAlmostEqual(self.va_sp3.improper, -35.2643896828)
         self.assertAlmostEqual(self.va_sp2.improper, 0.)
         self.assertAlmostEqual(self.va_rand.improper, -30.021240733)
+
+    def test_pyr_distance(self):
+        self.assertAlmostEqual(self.va_sp2.pyr_distance, 0.)
+        self.assertAlmostEqual(self.va_sp3.pyr_distance, 
+                               self.l * np.sin(self.theta_sp3 - np.pi / 2))
+        self.assertAlmostEqual(self.va_rand.pyr_distance, 0.4515551342307116)
 
 
 if __name__ == "__main__":

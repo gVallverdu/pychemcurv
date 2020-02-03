@@ -207,21 +207,18 @@ class VertexAtom:
                 the returned angles.
         """
         try:
-            a = np.array(a, dtype=np.float64).reshape(3)
+            self._a = np.array(a, dtype=np.float64).reshape(3)
         except ValueError:
             print("a = ", a)
             raise ValueError("Cannot convert a in a numpy array of floats.")
 
         try:
-            star_a = np.array(star_a, dtype=np.float64)
-            star_a = star_a.reshape(star_a.size // 3, 3)
+            self._star_a = np.array(star_a, dtype=np.float64)
+            self._star_a = self._star_a.reshape(self._star_a.size // 3, 3)
         except ValueError:
             print("*A, star_a = ", star_a)
             raise ValueError("Cannot convert star_a in a numpy array of floats"
                              " with a shape (N, 3).")
-
-        self._a = a
-        self._star_a = star_a
 
         if isinstance(ang_unit, Units) and ang_unit in Units:
             self.ang_unit = ang_unit
@@ -301,7 +298,7 @@ class VertexAtom:
     @property
     def pyr_distance(self):
         """
-        Compute the distance between atom A and the plane define by *(A) or
+        Compute the distance of atom A to the plane define by *(A) or
         the best fitting plane of *(A). The unit of the distance is the same 
         as the unit of the coordinates of A and *(A).
         """
@@ -407,7 +404,7 @@ class VertexAtom:
         l = np.linalg.norm(self._star_a[0] - point_O)
         z_A = np.dot(self._a - point_O, n_a)
         OA = np.linalg.norm(self._a - point_O)
-        
+
         # spherical curvature
         if np.isclose(z_A, 0, atol=0, rtol=1e-7):
             kappa = np.nan
@@ -477,11 +474,15 @@ class Hybridization:
         """ value of lambda_pi """
 
         # check domain definition of lambda_pi
-        if np.tan(self._pyrA) > 1 / np.sqrt(2):
-            raise ValueError("pyrA = {} degrees ".format(self.pyrA) +
-                             "lambda_pi is not define.")
+        values = 1 - 2 * np.tan(self._pyrA) ** 2
+        wrong = values < 0
+        if np.all(wrong):
+            raise ValueError("lambda_pi is not define. "
+                             "pyrA (degrees) = {}".format(self.pyrA))
+        elif np.any(wrong):
+            values = np.where(values > 0, values, np.nan)
 
-        return np.sqrt(1 - 2 * np.tan(self._pyrA) ** 2)
+        return np.sqrt(values)
 
     @property
     def m(self):

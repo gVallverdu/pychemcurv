@@ -22,9 +22,7 @@ from enum import Enum, unique
 
 __author__ = "Germain Salvato-Vallverdu"
 __copyright__ = "University of Pau and Pays Adour"
-__version__ = "2020.01.29"
 __email__ = "germain.vallverdu@univ-pau.fr"
-__status__ = "Development"
 
 __all__ = ["VertexAtom", "Units", "Hybridization"]
 

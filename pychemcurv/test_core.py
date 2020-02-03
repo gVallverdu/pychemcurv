@@ -93,7 +93,6 @@ class HybridizationTests(unittest.TestCase):
         self.assertTrue(np.allclose(self.h.pyrA, [ 0., 18.2, 19.47122063]))
         self.assertTrue(np.allclose(self.h.pyrA_r, 
                                     [ 0., np.radians(18.2), np.arccos(-1 / 3) - np.pi / 2]))
-
         self.assertAlmostEqual(self.h1.pyrA, self.h2.pyrA)
         self.assertAlmostEqual(self.h1.pyrA_r, self.h2.pyrA_r)
 

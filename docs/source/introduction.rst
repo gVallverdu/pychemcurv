@@ -1,10 +1,19 @@
-==========
-pychemcurv
-==========
+============
+Introduction
+============
+
+.. contents:: Table of contents
 
 pychemcurv is a python package for structural analyzes of molecular systems or 
 solid state materials focusing on the local curvature at an atomic scale. The 
 local curvature is then used to compute the hybridization of molecular orbitals.
+
+.. figure:: img/screenshot.png
+    :align: center
+    :width: 300
+
+    Pyramidalization angle of a :math:`C_{28}` fullerene mapped on the structure
+    with a colorscale.
 
 Features
 ========
@@ -62,10 +71,25 @@ de Physico-Chimie pour l'Environement et les Matériaux (IPREM)
 Appliquées (IPRA) <http://ipra.univ-pau.fr/>`_.
 
 
-Authors
--------
+**Authors**
 
 * Germain Salvato Vallverdu: `germain.vallverdu@univ-pau.fr <germain.vallverdu@univ-pau.fr>`_
 * Julia Sabalot-cuzzubbo `julia.sabalot@univ-pau.fr  <sabalot.julia@univ-pau.fr>`_
 * Didier Bégué: `didier.begue@univ-pau.fr <didier.begue@univ-pau.fr>`_
 * Jacky Cresson: `jacky.cresson@univ-pau.fr <jacky.cresson@univ-pau.fr>`_
+
+
+|UPPA| |CNRS| |IPREM|
+
+.. |UPPA| image:: https://www.univ-pau.fr/skins/uppa_cms-orange/resources/img/logoUPPA.png
+  :target: https://www.univ-pau.fr/en/home.html
+  :height: 100
+
+.. |IPREM| image:: https://annuaire.helioparc.fr/img/2019/11/logo-9.png
+  :target: https://iprem.univ-pau.fr/fr/index.html
+  :height: 100
+
+.. |CNRS| image:: http://www.cnrs.fr/themes/custom/cnrs/logo.svg
+  :target: http://www.cnrs.fr/
+  :height: 100
+

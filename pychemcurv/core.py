@@ -3,53 +3,29 @@
 
 
 """
-This is the core module that provides the functions who computes the
-geometrical descriptors associated to the curvature.
-
-Notations
----------
-
-
-A
-*(A)
-point B belongs to *(A)
-I : barycenter of points in *(A)
-
+This module implements the `VertexAtom` and `Hybridization` classes in order
+to compute the local curvature and the hybridation, respectively.
 """
 
 import numpy as np
-from enum import Enum, unique
 
 __author__ = "Germain Salvato-Vallverdu"
 __copyright__ = "University of Pau and Pays Adour"
 __email__ = "germain.vallverdu@univ-pau.fr"
 
-__all__ = ["VertexAtom", "Units", "Hybridization"]
-
-
-@unique
-class Units(Enum):
-    # angstrom = "A"
-    # meter = "m"
-    # picometer = "pm"
-    # nanometer = "nm"
-    degrees = "degrees"
-    radians = "radians"
-
-    def __str__(self):
-        return self.value
+__all__ = ["VertexAtom", "Hybridization"]
 
 
 def center_of_mass(coords, masses=None):
-    """Compute the center of mass of the points at coordinates `coords` with
+    r"""Compute the center of mass of the points at coordinates `coords` with
     masses `masses`.
 
     Args:
-        coords (np.ndarray): (N, 3) matrix of the points in R^3
+        coords (np.ndarray): (N, 3) matrix of the points in :math:`\mathbb{R}^3`
         masses (np.ndarray): vector of length N with the masses
 
     Returns:
-        The center of mass as a vector in R^3
+        The center of mass as a vector in :math:`\mathbb{R}^3`
     """
     # check coord array
     try:
@@ -78,12 +54,11 @@ def center_of_mass(coords, masses=None):
 
 
 def circum_center(coords):
-    """Compute the coordinates of the center of the circumscribed circle from
-    three points A, B and C in R^3.
+    r"""Compute the coordinates of the center of the circumscribed circle from
+    three points A, B and C in :math:`\mathbb{R}^3`.
 
     Args:
         coords (ndarray): (3x3) cartesian coordinates of points A, B and C. 
-            One point per line.
 
     Returns
         The coordinates of the center of the cicumscribed circle
@@ -112,7 +87,7 @@ def circum_center(coords):
 
 
 def get_plane(coords, masses=None):
-    """Given a set of N points in 3D space, compute an orthonormal basis of 
+    r"""Given a set of N points in :math:`\mathbb{R}^3`, compute an orthonormal basis of 
     vectors, the first two belonging to the plane and the third one being normal 
     to the plane. In the particular case where N equal 3, there is an exact
     definition of the plane as the three points define an unique plan.
@@ -121,7 +96,7 @@ def get_plane(coords, masses=None):
     N > 3, the orthonormal basis is obtained from SVD.
 
     Args:
-        coords (np.ndarray): (N, 3) matrix of the points in R^3
+        coords (np.ndarray): (N, 3) matrix of the points in :math:`\mathbb{R}^3`
         masses (np.ndarray): vector of length N with the masses
 
     Returns:
@@ -172,38 +147,98 @@ def get_plane(coords, masses=None):
 
 
 class VertexAtom:
-    """
-    This is an object representing an atom associated to a vertex of the
-    squeleton of a molecule. This atom A, is supposed to be bonded to atoms B
-    belonging to *(A). The object provides properties that are caracteristic to
-    the local geometry and the local curvature around atom A in the molecule.
+    r"""
+    This object represents an atom (or a point) associated to a vertex of the
+    squeleton of a molecule. Hereafter are reminded some definitions. To a 
+    complete overview, take a read at the following publications J Phys Chem ...
 
-    Note that the plane defined by atoms B belonging to *(A) is exactly 
-    defined *only* in the case where there are three atoms B in *(A). 
-    Nevertheless, if there are more than 3 atoms in *(A), the class use the
-    best fitting plane considering all atoms in *(A) and compute the geometrical
-    quantities.
+    We denote by A a given atom caracterized by its cartesian coordinates 
+    corresponding to a vector in :math:`\mathbb{R}^3`. This atom A is bonded to
+    one or several atoms B. The atoms B, bonded to atoms A belong to 
+    :math:`\star(A)` and are caracterized by their cartesian coordinates defined
+    as vectors in :math:`\mathbb{R}^3`. The geometrical
+    object obtained by drawing a segment between bonded atoms is called the
+    skeleton of the molecule and is the initial geometrical picture for a molecule.
+    This class is defined from the cartesian coordinates of atom A and the atoms
+    belonging to :math:`\star(A)`.
 
-    The pyramidaliation angle, the angular defect and the pyramidalization
-    distance needs at least 3 atoms to be computed. On the contrary, the 
-    improper angle and the spherical curvature are computed only if there
-    are exactly three atoms B belonging to *(A). If the number of atoms B is
-    wrong, `np.nan` is returned.
+    More generally, the classes only considers points in :math:`\mathbb{R}^3`
+    corresponding to the cartesian coordinates of the atoms.
+    In consequence, the class can be used for all cases
+    where a set of point in :math:`\mathbb{R}^3` is relevant.
 
-    Angles are return in radians. The pyramidalization angle is return in 
-    degrees (`self.pyrA`) or in radians (`self.pyrA_r`).
+    The following quantities are computed. For a complete definition, please
+    read the reference cited above (JPC 2020). All the quantities need that 
+    there are at least 3 atoms in :math:`\star(A)`.
+
+    pyramidalization angle ``pyrA``
+        The pyramidalization angle, **in degrees**. :math:`pyrA = \theta - \pi/2`
+        where :math:`\theta` is the angle between the normal vector of the plane
+        containing the atoms B of :math:`\star(A)` and a vector along a bond 
+        between atom A and one B atom.
+        
+        An exact definition of pyrA needs that A is bonded to exactly 3 atoms in 
+        order to be able to define a uniq plane that contains the atoms B
+        belonging to :math:`\star(A)`. Nevertheless, pyrA is computed if
+        more than 3 atoms are bonded to atom A by computing the best fitting plane
+        of atoms belonging to :math:`\star(A)`.
+
+    pyramidalization angle, ``pyrA_r``
+        The pyramidalization angle **in radians**.
+
+    improper angle, ``improper``
+        The improper angle corresponding to the dihedral angle between the 
+        planes defined by atoms (i, j, k) and (j, k, l), atom i being atom A and
+        atoms j, k and l being atoms of :math:`\star(A)`. In consequence, the
+        improper angle is defined only if there are 3 atoms in :math:`\star(A)`.
+        
+        The value of the improper angle is returned in radians.
+
+    angular defect, ``angular_defect``
+        The angluar defect is defined as :math:`2\pi - \sum_{F\in\star(A)} \alpha_F`
+        where :math:`\alpha_F` are the angles at the vertex A of the faces 
+        :math:`F\in\star(A)`. The angular defect is computed whatever the number
+        of atoms in :math:`\star(A)`.
+
+        The value of the angular defect is returned in radians.
+
+    spherical curvature, ``spherical_curvature``
+        The spherical curvature is computed as the radius of the osculating
+        sphere of atoms A and atoms belonging to :math:`\star(A)`. The
+        spherical curvature is computed as
+
+        .. math::
+
+            \kappa(A) = \frac{1}{\sqrt{\ell^2 + \dfrac{OA^2 - \ell^2}{4z_A^2}}}
+
+        where O is the center of the circumbscribed circle of atoms in 
+        :math:`\star(A)` ; A the vertex atom ; OA the distance between O and A ;
+        :math:`\ell` the distance between O and atoms B of :math:`\star(A)` ; 
+        :math:`z_A` the distance of atom A to the plane defined by 
+        :math:`\star(A)`. The spherical curvature is defined only if there are 
+        3 atoms in :math:`\star(A)`.
+
+    pyramidalization distance ``pyr_distance``
+        Distance of atom A to the plane define by :math:`\star(A)` or
+        the best fitting plane of :math:`\star(A)`. 
+        
+        The value of the distance is in the same unit as the coordinates.
+
+    If the number of atoms B in :math:`\star(A)` is not suitable to compute some
+    properties, `np.nan` is returned.
+
+    Note that the plane defined by atoms B belonging to :math:`\star(A)` is exactly 
+    defined *only* in the case where there are three atoms B in :math:`\star(A)`. 
+    In the case of pyrA, if there are more than 3 atoms in :math:`\star(A)`, the
+    class use the best fitting plane considering all atoms in :math:`\star(A)` and 
+    compute the geometrical quantities.
     """
 
     def __init__(self, a, star_a):
-        """
-        Define atom A, one vertex of the squeleton of a given molecule and atoms
-        B belonging to *(A). The unit of the angles computed in this class are 
-        is radians or degrees depending on `ang_unit`. The distances computed 
-        in this class are in the same unit as the input coordinates.
-
+        r"""
         Args:
-            a (np.ndarray): cartesian coordinates of atom a in R^3 
-            star_a (nd.array): (N x 3) cartesian coordinates of atoms in *(A)
+            a (np.ndarray): cartesian coordinates of atom A in :math:`\mathbb{R}^3`
+            star_a (nd.array): (N x 3) cartesian coordinates of atoms B in :math:`\star(A)`
         """
         try:
             self._a = np.array(a, dtype=np.float64).reshape(3)
@@ -226,14 +261,15 @@ class VertexAtom:
 
     @property
     def star_a(self):
-        """ Coordinates of atoms belonging to *(A) """
+        r""" Coordinates of atoms B belonging to :math:`\star(A)` """
         return self._star_a
 
     @property
     def reg_star_a(self):
-        """
-        Regularize the coordinates of the points in *(A) such as all distances 
-        between points belonging to *(A) and A are equal to unity.
+        r"""
+        Regularized coordinates of points B in :math:`\star(A)` such as all 
+        distances between A and points B are equal to unity. This corresponds to 
+        :math:`Reg_{\epsilon}\star(A)` with :math:`\epsilon` = 1.
         """
 
         u = self._star_a - self._a
@@ -244,17 +280,21 @@ class VertexAtom:
 
     @property
     def improper(self):
-        """
-        Compute the improper angle between planes defined by atoms (i, j, k) and
-        (j, k, l). Atom A, is atom i and atoms i, j and k belong to *(A).
+        r"""
+        Compute the improper angle in randians between planes defined by atoms 
+        (i, j, k) and (j, k, l). Atom A, is atom i and atoms j, k and l belong 
+        to :math:`\star(A)`.
+
+        ::
 
                      l
                      |
                      i
-                    / \
+                    /  \
                   j     k
 
-        This quantity is available only if the length of *(A) is equal to 3.
+        This quantity is available only if the length of :math:`\star(A)` is 
+        equal to 3.
         """
 
         # improper angle is defined only in the case of 3 atoms in *(A)
@@ -287,10 +327,10 @@ class VertexAtom:
 
     @property
     def pyr_distance(self):
-        """
-        Compute the distance of atom A to the plane define by *(A) or
-        the best fitting plane of *(A). The unit of the distance is the same 
-        as the unit of the coordinates of A and *(A).
+        r"""
+        Compute the distance of atom A to the plane define by :math:`\star(A)` or
+        the best fitting plane of :math:`\star(A)`. The unit of the distance is the
+        same as the unit of the coordinates of A and :math:`\star(A)`.
         """
         # pyramidalization distance needs at least 3 atoms in *(A)
         if self._star_a.shape[0] < 3:
@@ -304,10 +344,7 @@ class VertexAtom:
 
     @property
     def pyrA_r(self):
-        """ Return the pyramidalization angle in radians.
-        A pyramidal structure is assumed such as point A is the vertex of the 
-        pyramid and other points belong to *(A).
-        """
+        """ Return the pyramidalization angle in radians. """
 
         # check input coords
         if self._star_a.shape[0] < 3:
@@ -329,22 +366,18 @@ class VertexAtom:
 
     @property
     def pyrA(self):
-        """ Return the pyramidalization angle in degrees.
-        A pyramidal structure is assumed such as point A is the vertex of the 
-        pyramid and other points belong to *(A).
-        """
+        """ Return the pyramidalization angle in degrees. """
         return np.degrees(self.pyrA_r)
 
     @property
     def angular_defect(self):
-        """
+        r"""
         Compute the angular defect as a measure of the discrete curvature around 
-        the vertex, point A in R^3, and points B in R^3, bonded to point A, 
-        belonging to *(A).
+        the vertex, point A.
 
         The calculation first looks for the best fitting plane of points 
-        belonging to *(A) and sorts that points in order to compute the angles 
-        between the edges connected to the vertex (A).
+        belonging to :math:`\star(A)` and sorts that points in order to compute 
+        the angles between the edges connected to the vertex (A).
         """
 
         # check and regularize coords
@@ -385,10 +418,10 @@ class VertexAtom:
 
     @property
     def spherical_curvature(self):
-        """
-        Compute the spherical curvature associated to the osculating sphere at
-        a give point A of a molecule bonded to atoms B belonging to *(A).
-        Here, we assume that there is 3 atoms B in *(A).
+        r"""
+        Compute the spherical curvature associated to the osculating sphere of
+        points A and points B belonging to :math:`\star(A)`.
+        Here, we assume that there is exactly 3 atoms B in :math:`\star(A)`.
         """
 
         # check length of *(A)
@@ -412,10 +445,14 @@ class VertexAtom:
 
         return kappa
 
-    def as_dict(self, unit=Units.radians):
-        """ Return a dict version of all local quantities computed in this
-        class. """
-        radians = unit == Units.radians
+    def as_dict(self, radians=True):
+        """ 
+        Return a dict version of all the properties that can be computed using
+        this class. 
+
+        Args:
+            radians (bool): if True, angles are returned in radians (default)
+        """
         data = {
             "pyrA": self.pyrA_r if radians else self.pyrA,
             "spherical_curvature": self.spherical_curvature,
@@ -427,20 +464,29 @@ class VertexAtom:
 
 
 class Hybridization:
-    """
+    r"""
     This class compute the hybridization of the s and p atomic orbitals of a
-    given atom A, considering the pyramidalization angle.
+    given atom A, considering the pyramidalization angle. All the properties
+    are computed from the value of the pyramidalization angle.
+
+    For a precise definition of the various quantities look at the definitions
+    in JCP 2020.
+
+    A chemical picture of the hybridization can be draw by considering the
+    contribution of the :math:`p_z` atomic oribtal to the system :math:`\sigma`,
+    or the contribution of the s atomic orbital to the system :math:`\pi`. 
     """
 
     def __init__(self, pyrA=None, vertex=None, radians=False):
-        """
-        Define the vertex atom A or the pyramidalization angle of this atom.
-        In priority, the pyrA value is used. If not provided, the 
-        pyramidalization angle is computed from the definition of the vertex.
+        r"""
+        Define the vertex atom or the pyramidalization angle of this atom.
+        The pyramidalization angle `pyrA` value is considered first.
+        If not provided, the pyramidalization angle is computed from the 
+        definition of the vertex using the `VertexAtom` class.
 
         Args:
             pyrA (float): value of the pyramidalization angle
-            vertex (VertexAtom): atom A, corresponding to a vertex of a molecule
+            vertex (VertexAtom): Vertex atom A and atoms of :math:`\star(A)`
             radians (bool): if true the value of pyrA is in radian (default False)
         """
         if pyrA is not None:
@@ -466,12 +512,24 @@ class Hybridization:
 
     @property
     def c_pi(self):
-        """ Value of c_pi """
+        r""" 
+        Value of :math:`c_{\pi}` 
+        
+        .. math::
+        
+            c_{\pi} = \sqrt{3} \tan Pyr(A)
+        """
         return np.sqrt(2) * np.tan(self._pyrA)
 
     @property
     def lambda_pi(self):
-        """ value of lambda_pi """
+        r""" 
+        value of :math:`\lambda_{\pi}` 
+        
+        .. math::
+
+            \lambda_{\pi} = \sqrt{1 - 3 \tan^2 Pyr (A)} 
+        """
 
         # check domain definition of lambda_pi
         values = 1 - 2 * np.tan(self._pyrA) ** 2
@@ -486,28 +544,49 @@ class Hybridization:
 
     @property
     def m(self):
-        """ value of hybridization number m """
+        r""" 
+        value of hybridization number m 
+        
+        .. math::
+
+            m = \left(\frac{c_{\pi}}{\lambda_{\pi}}\right)^2
+        """
         return (self.c_pi / self.lambda_pi) ** 2
 
     @property
     def n(self):
-        """ value of hybridization number n """
+        """ 
+        value of hybridization number n 
+        
+        .. math::
+
+            n = 3m + 2
+        """
         return 3 * self.m + 2
 
     @property
     def hybridization(self):
-        """ 
-        Compute the hybridization such as s p^{(2 + C_pi^2) / (1 - C_pi^2)}.
-        This quantity corresponds to the amount of pz AO in the system sigma
-        and corresponds to the $\tilde{n}$ value defined by Haddon.
+        r""" 
+        Compute the hybridization such as 
+
+        .. math::
+
+            s p^{(2 + c_{\pi}^2) / (1 - c_{\pi}^2)}
+
+        This quantity corresponds to the amount of pz AO in the system 
+        :math:`\sigma` and corresponds to the :math:`\tilde{n}` value defined 
+        by Haddon.
         """
         return (2 + self.c_pi ** 2) / (1 - self.c_pi ** 2)
 
     def as_dict(self):
-        """ 
-        Return a dict version of all local quantities computed in this class. 
-        The square values of lambda_pi and c_pi coefficients are returned as 
-        they are more meaningfull.
+        r""" 
+        Return a dict version of all the properties that can be computed with
+        this class. Note that in the case of :math:`\lambda_{\pi}` and 
+        :math:`c_{\pi}` the squared values are returned as as they are more 
+        meaningfull.
+
+        All quantities do not have unit.
         """
         data = {
             "hybridization": self.hybridization,

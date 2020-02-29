@@ -511,7 +511,7 @@ class VertexAtom:
 
     def __str__(self):
         """ str representatio of the vertex atom """
-        s = "pyrA: {:10.4f} degrees\n".format(self.pyrA)
+        s = "pyrA: {:.4f} degrees\n".format(self.pyrA)
         s += "size of *(A): {}\n".format(len(self.star_a))
         s += "Atom A:\n{}\n".format(self.a)
         s += "Atoms B in *(A):\n{}\n".format(self.star_a)
@@ -520,6 +520,40 @@ class VertexAtom:
     def __repr__(self):
         """ representation of the vertex atom """
         return "VertexAtom(a={}, star_a={})".format(self.a, self.star_a)
+
+    def write_file(self, species="C", filename="vertex.xyz"):
+        r"""Write the coordinates of atom A and atoms :math:`\star(A)`
+        in a file in xyz format. You can set the name of species or a list but 
+        the length of the list must be equal to the number of atoms.
+        If filename is None, returns the string corresponding to the xyz file.
+
+        Args:
+            species (str, list): name of the species or list of the species names
+            filename (str): path of the output file or None to get a string
+
+        Returns:
+            None if filename is a path, else, the string corresponding to the
+            xyz file.
+        """
+        nat = len(self.star_a) + 1
+        if len(species) != nat:
+            species = nat * "C"
+
+        lines = "%d\n" % nat
+        lines += "xyz file from pychemcurv, "
+        lines += "pyrA = %.4f degrees\n" % self.pyrA
+        lines += "%2s %12.6f %12.6f %12.6f\n" % (species[0], 
+                                                 self.a[0], self.a[1], self.a[2])
+        for iat in range(0, nat - 1):
+            lines += "%2s " % species[iat]
+            lines += " ".join(["%12.6f" % x for x in self.star_a[iat]])
+            lines += "\n"
+
+        if filename is not None:
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(lines)
+        else:
+            return lines
 
 
 class Hybridization:

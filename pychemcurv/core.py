@@ -176,7 +176,7 @@ class VertexAtom:
         where :math:`\theta` is the angle between the normal vector of the plane
         containing the atoms B of :math:`\star(A)` and a vector along a bond 
         between atom A and one B atom.
-        
+
         An exact definition of pyrA needs that A is bonded to exactly 3 atoms in 
         order to be able to define a uniq plane that contains the atoms B
         belonging to :math:`\star(A)`. Nevertheless, pyrA is computed if
@@ -191,7 +191,7 @@ class VertexAtom:
         planes defined by atoms (i, j, k) and (j, k, l), atom i being atom A and
         atoms j, k and l being atoms of :math:`\star(A)`. In consequence, the
         improper angle is defined only if there are 3 atoms in :math:`\star(A)`.
-        
+
         The value of the improper angle is returned in radians.
 
     angular defect, ``angular_defect``
@@ -221,7 +221,7 @@ class VertexAtom:
     pyramidalization distance ``pyr_distance``
         Distance of atom A to the plane define by :math:`\star(A)` or
         the best fitting plane of :math:`\star(A)`. 
-        
+
         The value of the distance is in the same unit as the coordinates.
 
     If the number of atoms B in :math:`\star(A)` is not suitable to compute some
@@ -462,6 +462,65 @@ class VertexAtom:
         }
         return data
 
+    @staticmethod
+    def from_pyramid(length, theta, n_star_A=3, radians=False, perturb=None):
+        r"""Set up a VertexAtom from an ideal pyramidal structure.
+        Build an ideal pyramidal geometry given the angle theta and randomize
+        the positions by adding a noise of a given magnitude. The vertex of the 
+        pyramid is the point A, and :math:`\star(A)`. are the points linked to 
+        the vertex. The size of :math:`\star(A)`. is at least 3.
+
+        :math:`\theta` is the angle between the normal vector of the plane defined
+        from :math:`\star(A)` and the bonds between A and :math:`\star(A)`. 
+        The pyramidalisation angle is defined from :math:`\theta` such as
+
+        .. math::
+
+            pyrA = \theta - \frac{\pi}{2}
+
+        Args:
+            length (float): the bond lenght
+            theta (float): Angle to define the pyramid
+            n_star_A (int): number of point bonded to A the vertex of the pyramid.
+            radian (bool): True if theta is in radian (default False)
+            perturb (float): Give the width of a normal distribution from which
+                random numbers are choosen and added to the coordinates.
+
+        Returns:
+            A VertexAtom instance
+        """
+        r_theta = theta if radians else np.radians(theta)
+        if n_star_A < 3:
+            raise ValueError(
+                "n_star_A = {} and must be greater than 3.".format(n_star_A))
+
+        # build an ideal pyramid
+        IB = length * np.sin(r_theta)
+        step_angle = 2 * np.pi / n_star_A
+        coords = [[0, 0, -length * np.cos(r_theta)]]
+        coords += [[IB * np.cos(iat * step_angle),
+                    IB * np.sin(iat * step_angle),
+                    0] for iat in range(n_star_A)]
+        coords = np.array(coords, dtype=np.float)
+
+        # randomize positions
+        if perturb:
+            coords[1:, :] += np.random.normal(0, perturb, size=(n_star_A, 3))
+
+        return VertexAtom(coords[0], coords[1:])
+
+    def __str__(self):
+        """ str representatio of the vertex atom """
+        s = "pyrA: {:10.4f} degrees\n".format(self.pyrA)
+        s += "size of *(A): {}\n".format(len(self.star_a))
+        s += "Atom A:\n{}\n".format(self.a)
+        s += "Atoms B in *(A):\n{}\n".format(self.star_a)
+        return s
+
+    def __repr__(self):
+        """ representation of the vertex atom """
+        return "VertexAtom(a={}, star_a={})".format(self.a, self.star_a)
+
 
 class Hybridization:
     r"""
@@ -514,9 +573,9 @@ class Hybridization:
     def c_pi(self):
         r""" 
         Value of :math:`c_{\pi}` 
-        
+
         .. math::
-        
+
             c_{\pi} = \sqrt{3} \tan Pyr(A)
         """
         return np.sqrt(2) * np.tan(self._pyrA)
@@ -525,7 +584,7 @@ class Hybridization:
     def lambda_pi(self):
         r""" 
         value of :math:`\lambda_{\pi}` 
-        
+
         .. math::
 
             \lambda_{\pi} = \sqrt{1 - 3 \tan^2 Pyr (A)} 
@@ -546,7 +605,7 @@ class Hybridization:
     def m(self):
         r""" 
         value of hybridization number m 
-        
+
         .. math::
 
             m = \left(\frac{c_{\pi}}{\lambda_{\pi}}\right)^2
@@ -557,7 +616,7 @@ class Hybridization:
     def n(self):
         """ 
         value of hybridization number n 
-        
+
         .. math::
 
             n = 3m + 2

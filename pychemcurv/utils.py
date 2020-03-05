@@ -1,281 +1,223 @@
+#!/usr/bin/env python
 # coding: utf-8
 
-import warnings
 import numpy as np
-import pychemcurv
-
 import pandas as pd
 
-__author__ = "Germain Salvato Vallverdu"
-__copyright__ = ""
-__version__ = "0.1"
-__maintainer__ = "Germain Salvato Vallverdu"
+from pymatgen import Molecule, Structure
+from pymatgen.core.bonds import obtain_all_bond_lengths
+from .core import VertexAtom, Hybridization
+
+
+__author__ = "Germain Salvato-Vallverdu"
+__copyright__ = "University of Pau and Pays Adour"
 __email__ = "germain.vallverdu@univ-pau.fr"
 
-BOND_CUTOFFS = {
-    # distances in angstrom
-    ("H", "H"): 1.0,
-    ("C", "C"): 1.7,
-    ("C", "O"): 1.7,
-    ("C", "S"): 1.9,
-    ("C", "N"): 1.7,
-    ("C", "Cl"): 1.9,
-    ("C", "Br"): 2.2,
-    ("C", "F"): 1.7,
-    ("C", "H"): 1.2,
-    ("C", "P"): 1.9,
-    ("C", "H"): 1.2,
-    ("N", "H"): 1.2,
-    ("O", "H"): 1.2,
-    ("S", "H"): 1.3,
-    ("P", "H"): 1.3,
-    ("P", "O"): 1.8,
-    ("P", "N"): 1.8,
-    ("S", "O"): 1.7,
-    ("F", "H"): 1.2,
-}
-
-def get_bond_cutoff(specie1, specie2, rcut=2.5):
-    """
-    Return the bond cut-off in angstrom corresponding to the BOND_CUTOFF_DICT
-    """
-    if (specie1, specie2) in BOND_CUTOFFS:
-        return BOND_CUTOFFS[(specie1, specie2)]
-    elif (specie2, specie1) in BOND_CUTOFFS:
-        return BOND_CUTOFFS[(specie2, specie1)]
-    else:
-        warnings.warn(f"bond {specie1}-{specie2} not known", category=UserWarning)
-        return rcut
+__all__ = ["CurvatureAnalyzer"]
 
 
-def read_xyz(file):
-    """
-    Read an xyz like file.
-    The file is suposed to display the number of atom on the first line,
-    followed by a title line and followed by the structure in cartesian
-    coordinates. Each line contains the element as first item and the
-    cartesian coordinates as 2d, 3th and 4th items. Example:
-
-        3
-        H2O molecule
-        O   -0.111056  0.033897  0.043165
-        H    0.966057  0.959148 -1.089095
-        H    0.796629 -1.497157  0.403985
-
-    If additional data are provided on each line, they are returned as
-    atomic properties. Example, this file:
-
-        3
-        H2O molecule
-        O   -0.111056  0.033897  0.043165   -1.8
-        H    0.966057  0.959148 -1.089095    0.9
-        H    0.796629 -1.497157  0.403985    0.9
-
-    will return an `atomic_prop` dict such as:
-
-        {"prop1": [-1.8, 0.9, 0.9]}
-
-    Args:
-        file (IO, string): An IO object with a readline() method or string 
-            corresponding to a file path.
-
-    Returns:
-        * species, the list of elements
-        * coords, a numpy array of floats with the shape (natom, 3)
-        * None or atomic_prop dict such as {"prop1": [...], "prop2": [...]}
+class CurvatureAnalyzer:
+    """ This class provides helpful methods to analyze the local curvature
+    on all atoms of a given structure. The structure is either a molecule or 
+    a periodic structure. Once the structure is read, the class determines the
+    connectivity of the structure in order to define all vertices. The 
+    connectivity is defined on a distance criterion.
     """
 
-    if isinstance(file, str):
-        file = open(file, "r")
+    def __init__(self, structure, bond_tol=0.2, rcut=2.5, bond_order=None):
+        """ The class needs a pymatgen.Structure or pymatgen.Molecule object as
+        first argument. The other arguments are used to defined is two atoms are
+        bonded or not.
+        
+        Args:
+            structure (Structure, Molecule): A Structure or Molecule pymatgen 
+                objects
+            bond_tol (float): Tolerance used to determine if two atoms are 
+                bonded. Look at `pymatgen.core.CovalentBond.is_bonded`.
+            rcut (float): Cutoff distance in case the bond is not not known
+            bond_order (dict): Not yet implemented
 
-    # natom
-    natom = int(file.readline().split()[0])
-    _ = file.readline()
+        """
+        if isinstance(structure, (Molecule, Structure)):
+            self.structure = structure
+        else:
+            raise TypeError("structure must a Molecule or Structure pymatgen"
+                            " object. type(structure) is: " + str(type(structure)))
 
-    # look for addition atomic properties
-    nval_per_lines = [len(file.readline().split()) for _ in range(natom)]
-    nprop = max(nval_per_lines)
-    if all([nprop == nval for nval in nval_per_lines]):
-        atomic_prop = list()
-        nprop = nprop - 4
-    else:
-        atomic_prop = None
-        nprop = 0
+        self.bond_tol = bond_tol
+        self.rcut = rcut
+        self.bond_order = bond_order
 
-    # read the file
-    file.seek(0)
-    file.readline()  # natom
-    file.readline()  # title
+        # compute distance matrix one time. You must call only one time
+        # structure.distance_matrix to save computational time
+        self._distance_matrix = self.structure.distance_matrix
 
-    coords = list()
-    species = list()
-    for _ in range(natom):
-        data = file.readline().split()
-        species.append(data[0])
-        coords.append(data[1:4])
+        # look for bonds and set vertices
+        self._vertices = []
+        self._bonds = set()
+        self._vertices_idx = []
+        self._get_vertex()
 
-        if nprop > 0:
-            atomic_prop.append(data[4:4 + nprop])
+        # fill a DataFrame with datas
+        self._data = pd.DataFrame([])
+        self._compute_data()
 
-    # close file
-    file.close()
+    @property
+    def vertices(self):
+        """ List of vertices associated to each atom of the molecule """
+        return self._vertices
 
-    if nprop > 0:
-        atomic_prop = np.array(atomic_prop, dtype=np.float).transpose()
-        atomic_prop = {"prop%d" % i: d for i, d in enumerate(atomic_prop)}
+    @property
+    def bonds(self):
+        """ Set of tuples of bonded atom index """
+        return self._bonds
 
-    return species, np.array(coords, dtype=np.float), atomic_prop
+    @property
+    def vertices_idx(self):
+        r""" List of tuples of the indexes of atoms in each vetex. The first
+        index is atom A, the following are atoms of :math:`\star(A)`. """
+        return self._vertices_idx
 
+    @property
+    def data(self):
+        """ 
+        Return a Data Frame that contains all the geometric and hybridization
+        data. 
+        """
+        return self._data
 
-def compute_data(species, coords, rcut=2.5, distances=None):
-    """
-    Compute the data over the whole molecule. For each atom, the following data 
-    are computed:
-    * pyramidalization angle, Pyr(A) (degrees)
-    * angular defect (degrees)
-    * spherical curvature, kappa, (A^-1)
-    * improper angle (degrees)
-    * distance from the average plane of neighbors
-    * the average distances with neighbors
-    * the number of neighbors
-    * hybridization coefficients c_pi^2 and lambda_pi^2
-    * hybridization numbers, m and n
-    * hybridizaiton sp^x
+    @property
+    def distance_matrix(self):
+        """ Returns the distance matrix between all atoms. For periodic 
+        structures, this returns the nearest image distances. """
+        return self._distance_matrix
 
-    if the number of neighbors > 3, the function only computes the angular 
-    defect, the average distances with neighbors and the distance from the 
-    average plane.
+    def _get_vertex(self):
+        """ Look for all vertex defined as atoms bonded to at least
+        3 neighbors and set up a list of VertexAtom object."""
 
-    Args:
-        species (list): list of elements as string
-        coords (nat x 3 arry): cartesian coordinates
-        rcut (float): cutoff radius to select neighbors
+        vertices = list()
+        vertices_idx = list()
+        bonds = set()
+        errors = set()
+        for isite, site_i in enumerate(self.structure):
+            atom_A = site_i.coords
 
-    """
+            star_a = list()
+            vertex_idx = [isite]
+            for jsite, site_j in enumerate(self.structure):
+                if isite == jsite:
+                    continue
+                
+                # check if i and j are bonded
+                distance = self._distance_matrix[isite, jsite]
+                bonded = False
+                try:
+                    # look for bond length database of pymatgen
+                    # equivalent to CovalentBonds.is_bonded but avoid to compute 
+                    # two times the bond length
+                    ref_distances = obtain_all_bond_lengths(site_i.specie,
+                                                            site_j.specie)
+                    # TODO: use ref_distances from a bond order
+                    for rcut in ref_distances.values():
+                        if distance < (1 + self.bond_tol) * rcut:
+                            bonded = True
 
-    # compute the distance matrix
-    if not distances:
-        # compute all distances
-        distances = (coords[:, None, :] - coords[None, :, :]) ** 2
-        distances = np.sqrt(np.sum(distances, axis=-1))
+                except ValueError as e:
+                    errors.add(str(e))
+                    bonded = distance <= self.rcut
 
-    # dict of data to set up the dataframe
-    natom = len(species)
-    columns = ["atom index", "species", "x", "y", "z", "angular defect",
-               "pyrA", "improper", "spherical curvature", 
-               "c_pi^2", "lambda_pi^2", "m", "n", "hybridization",
-               "dist. from ave. plane", "n_neighbors", "ave. neighb. dist."]
-    data = pd.DataFrame(columns=columns)
-    # data = {
-    #     "atom index": np.arange(1, natom + 1).tolist(),
-    #     "species": species,
-    #     "x": coords[:, 0],
-    #     "y": coords[:, 1],
-    #     "z": coords[:, 2]
-    # }
-    # data.update({c: np.full(natom, np.nan) for c in columns[5:]})
+                # increment *(A) if i and j are bonded
+                if bonded:
+                    star_a.append(site_j.coords)
+                    vertex_idx.append(jsite)
+                    bonds.add(tuple(sorted([isite, jsite])))
 
-    for iat in range(natom):
-        # atom A
-        atom_a = coords[iat, :]
-        line = {"atom index": iat + 1, "species": species[iat]}
-        line.update({x: coords[iat, i] for i, x in enumerate("xyz")})
+            # set up VertexAtom objects
+            if len(star_a) >= 3:
+                vertices.append(VertexAtom(atom_A, star_a))
+                vertices_idx.append(tuple(vertex_idx))
+            else:
+                vertices.append(None)
+                vertices_idx.append(None)
 
-        # look for atoms of *(A)
-        n_neighbors = 0
-        ave_distance = 0
-        star_a = list()
-        for jat in range(natom):
-            if jat == iat:  # skip current atom
+        self._vertices = vertices
+        self._vertices_idx = vertices_idx
+        self._bonds = bonds
+
+        if errors:
+            print("errors\n", "\n".join(errors))
+
+    def _compute_data(self):
+        """ Compute geometric and hybridation data for all vertex in the
+        structure and store them in a DataFrame. """
+
+        data = list()
+        for vertex, vertex_idx in zip(self.vertices, self.vertices_idx):
+            if vertex is None:
                 continue
 
-            rc = get_bond_cutoff(species[iat], species[jat], rcut)
-            if distances[iat, jat] < rc:
-                star_a.append(coords[jat, :])
-                n_neighbors += 1
-                ave_distance += distances[iat, jat]
-        
-        star_a = np.array(star_a, dtype=np.float)
+            hyb = Hybridization(vertex=vertex)
+            try:
+                vdata = {**vertex.as_dict(radians=False), **hyb.as_dict()}
+            except ValueError:
+                vdata = vertex.as_dict(radians=False)
+                print("Unable to compute all data.")
 
-        # number of neighbors
-        line["n_neighbors"] = n_neighbors
+            ia = vertex_idx[0]
+            vdata.update(atom_idx=ia, species=self.structure[ia].specie.symbol)
 
-        # compute data if the number of neighbors is relevant
-        if n_neighbors == 3:
-            pyrA = curvature.get_pyr_angle(atom_a, star_a)
-            line["pyrA"] = pyrA
-            line["improper"] = curvature.get_improper(atom_a, star_a)
-            line["spherical curvature"] = \
-                curvature.get_spherical_curvature(atom_a, star_a)
-            
-            c_pi, lambda_pi = curvature.get_hybridization_coeff(pyrA)
-            line["c_pi^2"] = c_pi ** 2
-            line["lambda_pi^2"] = lambda_pi ** 2
-            m, n = curvature.get_hybridization_numbers(pyrA)
-            line["m"] = m
-            line["n"] = n
-            line["hybridization"] = curvature.hybridization(pyrA)
+            distances = [self.distance_matrix[ia, j] for j in vertex_idx[1:]]
+            vdata.update({"ave. neighb. dist.": np.mean(distances)})
 
-        if n_neighbors >= 3:
-            line["dist. from ave. plane"] = curvature.get_pyr_distance(atom_a, star_a)
-            line["angular defect"] = curvature.get_angular_defect(atom_a, star_a)
+            data.append(vdata)
 
-        if n_neighbors >= 1:
-            line["ave. neighb. dist."] = ave_distance / n_neighbors
+        self._data = pd.DataFrame(data)
 
-        data.loc[iat] = line
-    # data["n_neighbors"] = data["n_neighbors"].astype(np.integer, copy=False)
-    # df = pd.DataFrame(data, columns=columns)
-    # df.set_index(df["atom index"], inplace=True)
+    @staticmethod
+    def from_file(path, periodic=None):
+        """ Returns a CurvatureAnalyze object from the structure at the 
+        given path. This method relies on the file format supported with 
+        pymatgen Molecule and Structure classes.
 
-    return data, distances
+        Supported formats for periodic structure include CIF, POSCAR/CONTCAR, 
+        CHGCAR, LOCPOT, vasprun.xml, CSSR, Netcdf and pymatgen’s JSON serialized 
+        structures.
 
+        Supported formats for molecule include include xyz, gaussian input 
+        (gjf|g03|g09|com|inp), Gaussian output (.out|and pymatgen’s JSON 
+        serialized molecules.
 
-def get_molecule_data(mol, rcut=2.0):
-    """
-    Compute the curvature on all atoms in the molecule. For each atom, the
-    discrete curvature is computed as the angular defect. Each atom is considered
-    as a vertex, and the edges are determined by atoms bonded to the vertex. The
-    list of edges is build using rcut as a distance cut-off.
+        Args:
+            path (str): Path to the structure file
+            periodic (bool): if True, assume that the file correspond to a
+                periodic structure. Default is None. The method tries to read
+                the file, first from the Molecule class and second from the
+                Structure class of pymatgen.        
+        """
+        if periodic is None:
+            # try to read as a molecule
+            try:
+                structure = Molecule.from_file(path)
+            except ValueError as e1:
+                print("Cannot read file as a molecule.")
+                # Try to read as a periodic structure
+                try:
+                    structure = Structure.from_file(path)
+                except ValueError as e2:
+                    print("Cannot read file as a periodic structure.")
+                    print("Try as a molecule, error:", e1)
+                    print("Try as a structure, error:", e2)
+                    raise ValueError("Unable to load structure from file '%s'" % path)
 
-    Args:
-        mol (mg.Molecule): pymatgen molecule object
-        rcut (float): a distance cut-off to determine the edges around the vertex
+        elif periodic:
+            # Structure object
+            structure = Structure.from_file(path)
 
-    Returns
-        a Molecule object with the following properties:
-            'curvature': the curvatures
-            'neighbors': the number of neighbors of each atom
-            'distances': the average distances of neighbors
-    """
+        else:
+            # Molecule object
+            structure = Molecule.from_file(path)
 
-    mol = mol.copy()
-    curvatures = list()
-    nneighbors = list()
-    distances = list()
+        print("Read structure, done.")
 
-    # look for max cutoff
-    elements = mol.composition.elements
-    bonds = [(elements[iat].symbol, elements[jat].symbol) 
-                for iat in range(len(elements)) 
-                    for jat in range(iat, len(elements))]
-    rcut_max = max([get_bond_cutoff(s1, s2) for s1, s2 in bonds])
-
-    for atom in mol:
-        coords = atom.coords
-        n = 0
-        ave_distance = 0
-        for neighbor, distance in mol.get_neighbors(atom, rcut):
-            coords = np.row_stack((coords, neighbor.coords))
-            n += 1
-            ave_distance += distance
-
-        distances.append(ave_distance / n)
-        nneighbors.append(n)
-        curvatures.append(get_discrete_curvature(coords))
-
-    mol.add_site_property("curvature", curvatures)
-    mol.add_site_property("neighbors", nneighbors)
-    mol.add_site_property("distances", distances)
-
-    return mol
+        return CurvatureAnalyzer(structure)

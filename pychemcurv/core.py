@@ -458,7 +458,10 @@ class VertexAtom:
             "spherical_curvature": self.spherical_curvature,
             "angular_defect": self.angular_defect if radians else np.degrees(self.angular_defect),
             "improper": self.improper if radians else np.degrees(self.improper),
-            "pyr_distance": self.pyr_distance
+            "pyr_distance": self.pyr_distance,
+            "atom_A": self.a,
+            "star_A": self.star_a,
+            "n_star_A": len(self.star_a),
         }
         return data
 

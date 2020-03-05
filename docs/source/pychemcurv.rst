@@ -1,8 +1,8 @@
-==========
-pychemcurv
-==========
+===============
+pychemcurv.core
+===============
 
-.. automodule:: pychemcurv
+.. automodule:: pychemcurv.core
 
 VertexAtom class
 ----------------

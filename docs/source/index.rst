@@ -9,6 +9,7 @@
     :hidden:
     
     pychemcurv
+    utils
 
 .. include:: introduction.rst
 

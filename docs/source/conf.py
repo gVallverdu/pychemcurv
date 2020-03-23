@@ -68,7 +68,7 @@ html_theme_options = {
     'navigation_depth': 4,
     'includehidden': True,
     'titles_only': False,
-    # "github_url": "https://github.com/gVallverdu/pychemcurv",   
+    # "github_url": "https://github.com/gVallverdu/pychemcurv",
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -80,3 +80,4 @@ html_static_path = ['_static']
 
 autodoc_member_order = "bysource"
 autoclass_content = 'both'
+master_doc = 'index'

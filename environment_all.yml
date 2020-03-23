@@ -1,0 +1,18 @@
+name: icpmsviz
+channels:
+  - defaults
+dependencies:
+  - python=3.7
+  - numpy
+  - pymatgen
+  - pandas
+  - pip:
+    - requests==2.22.0
+    - dash==1.7.0
+    - dash-bootstrap-components==0.8.1
+    - dash-core-components==1.6.0
+    - dash-html-components==1.0.2
+    - dash-renderer==1.2.2
+    - dash-table==4.5.1
+    - plotly==4.3.0
+    - dash-bio==0.4.5

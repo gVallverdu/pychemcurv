@@ -2,20 +2,28 @@
 pychemcurv
 ==========
 
-pychemcurv is a python package for structural analyzes of molecular systems or 
-solid state materials focusing on the local curvature at an atomic scale. The 
+.. image:: https://readthedocs.org/projects/pychemcurv/badge/?version=latest
+    :target: https://pychemcurv.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
+* `installation <#installation>`_
+* `documentation <https://pychemcurv.readthedocs.io/>`_
+* `Notebooks <https://nbviewer.jupyter.org/github/gVallverdu/pychemcurv/tree/master/notebooks/>`_
+
+pychemcurv is a python package for structural analyzes of molecular systems or
+solid state materials focusing on the local curvature at an atomic scale. The
 local curvature is then used to compute the hybridization of molecular orbitals.
 
 Features
 ========
 
-Pychemcurv is divided in two parts. The first one is a standard python packages 
-which provides two main classes to compute the local curvature at the atomic 
-scale and the hybridization of a given atom. Second, a plotly-Dash web 
-application is provided in order to perform a visualization of the structural 
+Pychemcurv is divided in two parts. The first one is a standard python packages
+which provides two main classes to compute the local curvature at the atomic
+scale and the hybridization of a given atom. Second, a plotly-Dash web
+application is provided in order to perform a visualization of the structural
 analyzes on molecules or materials.
 
-The web-application relies on the core classes of pychemcurv. Several jupyter 
+The web-application relies on the core classes of pychemcurv. Several jupyter
 notebooks are also provided as examples.
 
 Installation
@@ -31,7 +39,7 @@ In order to run the web-application you also need Dash and plotly.
 
 You can install the requirements with ``pip``
 
-:: 
+::
 
     pip install -r requirements.txt
 
@@ -41,16 +49,16 @@ or using ``conda`` and creating a new environment
 
     conda env create -f environment.yml
 
-Run the above install command with ``requirements_all.txt`` or ``environment_all.yml`` 
-for a complete installation including dash and jupyter. It is advised to 
+Run the above install command with ``requirements_all.txt`` or ``environment_all.yml``
+for a complete installation including dash and jupyter. It is advised to
 install the package in a dedicated environment.
 
 Citing pychemcurv
 =================
 
-Julia Sabalot-Cuzzubbo, Germain Vallverdu, Jacky Cresson and Didier Bégué, 
-*Relating the shape of a molecule and its reactivity - Haddon's Curvature and 
-the Pyramidalization Angle*
+Julia Sabalot-Cuzzubbo, Germain Vallverdu, Jacky Cresson and Didier Bégué,
+*Relating the shape of a molecule and its reactivity - Haddon's Curvature and
+the Pyramidalization Angle*, *Under review*
 
 Licence and contact
 ===================

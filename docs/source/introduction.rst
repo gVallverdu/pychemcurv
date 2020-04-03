@@ -8,6 +8,12 @@ pychemcurv is a python package for structural analyzes of molecular systems or
 solid state materials focusing on the local curvature at an atomic scale. The 
 local curvature is then used to compute the hybridization of molecular orbitals.
 
+The main features of the library are available from a 
+`Plotly/Dash <https://plot.ly/dash/>`_ web application available
+here `pychemapps.univ-pau.fr/mosica <https://pychemapps.univ-pau.fr/mosaica/>`_.
+The webapps allows to upload simple xyz files and compute the local geometrical
+properties and the hybridization properties.
+
 .. figure:: img/screenshot.png
     :align: center
     :width: 300

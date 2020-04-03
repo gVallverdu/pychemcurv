@@ -8,6 +8,7 @@ pychemcurv
 
 * `installation <#installation>`_
 * `documentation <https://pychemcurv.readthedocs.io/>`_
+* Dash web application `https://pychemapps.univ-pau.fr/mosica <https://pychemapps.univ-pau.fr/mosaica/>`_.
 * `Notebooks <https://nbviewer.jupyter.org/github/gVallverdu/pychemcurv/tree/master/notebooks/>`_
 
 pychemcurv is a python package for structural analyzes of molecular systems or
@@ -19,9 +20,13 @@ Features
 
 Pychemcurv is divided in two parts. The first one is a standard python packages
 which provides two main classes to compute the local curvature at the atomic
-scale and the hybridization of a given atom. Second, a plotly-Dash web
-application is provided in order to perform a visualization of the structural
-analyzes on molecules or materials.
+scale and the hybridization of a given atom. Second, a 
+`Plotly/Dash <https://plot.ly/dash/>`_ web
+application is provided in order to perform geometrical and electronic
+analyzes on molecules or materials. The web application is available at
+`pychemapps.univ-pau.fr/mosica <https://pychemapps.univ-pau.fr/mosaica/>`_.
+The webapps allows to upload simple xyz files and compute the local geometrical
+properties and the hybridization properties.
 
 The web-application relies on the core classes of pychemcurv. Several jupyter
 notebooks are also provided as examples.

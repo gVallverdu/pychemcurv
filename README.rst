@@ -34,29 +34,43 @@ notebooks are also provided as examples.
 Installation
 ============
 
-The core classes of pychemcurv relies on the following python packages
+Before installing pychemcurv it is recommanded to create a virtual environment 
+dedicated using conda or virtuelenv.
 
-* numpy
-* pandas
-* pymatgen
+Then using pip directly from github, run
 
-In order to run the web-application you also need Dash and plotly.
+::
 
-You can install the requirements with ``pip``
+    pip install git+git://github.com/gVallverdu/pychemcurv.git
+
+
+Alternatively, or if you want to install it in developper mode, 
+you have to clone the pychemcurv repository
+
+:: 
+
+    git clone https://github.com/gVallverdu/pychemcurv.git
+
+and then install the module and its dependencies in developper mode
+
+::
+
+    pip install -e .
+
+
+In order to run the web-application locally you also need Dash and plotly. 
+You can build a specific environment from ``requirements.txt`` file or 
+``environment.yml`` using conda.
 
 ::
 
     pip install -r requirements.txt
 
-or using ``conda`` and creating a new environment
+or using ``conda``
 
 ::
 
     conda env create -f environment.yml
-
-Run the above install command with ``requirements_all.txt`` or ``environment_all.yml``
-for a complete installation including dash and jupyter. It is advised to
-install the package in a dedicated environment.
 
 Citing pychemcurv
 =================

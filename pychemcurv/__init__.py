@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# coding: utf-8
 
 """
 This python packages provides classes in order to compute the local curvature
@@ -10,11 +9,8 @@ the quantities for all the atoms of a molecule or a unit cell.
 
 __author__ = "Germain Salvato-Vallverdu"
 __copyright__ = "University of Pau and Pays Adour"
-__version__ = "2020.01.29"
+__version__ = "2020.4.22"
 __email__ = "germain.vallverdu@univ-pau.fr"
-__status__ = "Development"
 
-from .core import *
-from .utils import *
-
-
+from .core import VertexAtom, Hybridization
+from .analysis import CurvatureAnalyzer

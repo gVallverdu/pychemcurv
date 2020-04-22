@@ -1,5 +1,9 @@
-#!/usr/bin/env python
 # coding: utf-8
+
+"""
+This module implements the `CurvatureAnalyze` class to perform curvature 
+analyses on molecular or periodic structures.
+"""
 
 import numpy as np
 import pandas as pd
@@ -26,9 +30,9 @@ class CurvatureAnalyzer:
 
     def __init__(self, structure, bond_tol=0.2, rcut=2.5, bond_order=None):
         """ The class needs a pymatgen.Structure or pymatgen.Molecule object as
-        first argument. The other arguments are used to defined is two atoms are
+        first argument. The other arguments are used to defined if two atoms are
         bonded or not.
-        
+
         Args:
             structure (Structure, Molecule): A Structure or Molecule pymatgen 
                 objects
@@ -108,13 +112,13 @@ class CurvatureAnalyzer:
             for jsite, site_j in enumerate(self.structure):
                 if isite == jsite:
                     continue
-                
+
                 # check if i and j are bonded
                 distance = self._distance_matrix[isite, jsite]
                 bonded = False
                 try:
                     # look for bond length database of pymatgen
-                    # equivalent to CovalentBonds.is_bonded but avoid to compute 
+                    # equivalent to CovalentBonds.is_bonded but avoid to compute
                     # two times the bond length
                     ref_distances = obtain_all_bond_lengths(site_i.specie,
                                                             site_j.specie)
@@ -139,7 +143,7 @@ class CurvatureAnalyzer:
                 vertices_idx.append(tuple(vertex_idx))
             else:
                 vertices.append(None)
-                vertices_idx.append(None)
+                vertices_idx.append(tuple(vertex_idx))
 
         self._vertices = vertices
         self._vertices_idx = vertices_idx
@@ -155,14 +159,20 @@ class CurvatureAnalyzer:
         data = list()
         for vertex, vertex_idx in zip(self.vertices, self.vertices_idx):
             if vertex is None:
-                continue
-
-            hyb = Hybridization(vertex=vertex)
-            try:
-                vdata = {**vertex.as_dict(radians=False), **hyb.as_dict()}
-            except ValueError:
-                vdata = vertex.as_dict(radians=False)
-                print("Unable to compute all data.")
+                nan_array = np.empty(3)
+                nan_array.fill(np.nan)
+                vdata = {
+                    **VertexAtom(nan_array, nan_array).as_dict(),
+                    **Hybridization(pyrA=np.nan).as_dict()
+                }
+                vdata["n_star_A"] = 0
+            else:
+                hyb = Hybridization(vertex=vertex)
+                try:
+                    vdata = {**vertex.as_dict(radians=False), **hyb.as_dict()}
+                except ValueError:
+                    vdata = vertex.as_dict(radians=False)
+                    print("Unable to compute all data.")
 
             ia = vertex_idx[0]
             vdata.update(atom_idx=ia, species=self.structure[ia].specie.symbol)
@@ -208,7 +218,8 @@ class CurvatureAnalyzer:
                     print("Cannot read file as a periodic structure.")
                     print("Try as a molecule, error:", e1)
                     print("Try as a structure, error:", e2)
-                    raise ValueError("Unable to load structure from file '%s'" % path)
+                    raise ValueError(
+                        "Unable to load structure from file '%s'" % path)
 
         elif periodic:
             # Structure object

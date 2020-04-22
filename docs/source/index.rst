@@ -9,7 +9,9 @@
     :hidden:
     
     pychemcurv
-    utils
+    analysis
+    visualization
+    geometry
 
 .. include:: introduction.rst
 

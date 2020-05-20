@@ -8,7 +8,7 @@ pychemcurv
 
 * `installation <#installation>`_
 * `documentation <https://pychemcurv.readthedocs.io/>`_
-* Dash web application `https://pychemapps.univ-pau.fr/mosica <https://pychemapps.univ-pau.fr/mosaica/>`_.
+* Dash web application `https://pychemapps.univ-pau.fr/mosaica <https://pychemapps.univ-pau.fr/mosaica/>`_.
 * `Notebooks <https://nbviewer.jupyter.org/github/gVallverdu/pychemcurv/tree/master/notebooks/>`_
 
 pychemcurv is a python package for structural analyzes of molecular systems or

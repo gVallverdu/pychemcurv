@@ -1,0 +1,281 @@
+/* ==========================================================================
+   style.css
+ ========================================================================== */
+ 
+body {
+    background: #ffffff;
+}
+
+.container {
+  max-width: 1280px;
+  margin: auto;
+  width: 100%;
+  padding: 5px;
+  box-sizing: border-box;
+}
+
+h2, h3, h4, h5, H6 {
+  color: rgb(60, 99, 130);
+}
+
+/* header 
+   -------------------------------------------------------------------------- */
+.head {
+  color: #fff;
+  background-color: rgb(60, 99, 130);
+  height: 80px;
+}
+
+.head h1 {
+  line-height: 80px;
+  color: #fff;
+  margin: 0;
+  margin-left: 20px;
+  padding: 0;
+  letter-spacing: .1rem;
+  font-size: 2em;
+  display: inline-block;
+}
+
+.head h2 {
+  color: #ebecee;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  padding: 0;
+  font-style: italic;
+  font-size: 1.5em;
+  letter-spacing: .1rem;
+}
+
+#github-link {
+  text-decoration: none;
+  font-size: 10pt;
+  /* font-family: sans-serif; */
+  color: white;
+  border: solid 1px white;
+  border-radius: 2px;
+  padding: 2px;
+  padding-top: 5px;
+  padding-left: 15px;
+  padding-right: 15px;
+  font-weight: 100;
+  position: relative;
+  top: 25px;
+  float: right;
+  margin-right: 20px;
+  margin-left: 0px;
+  transition-duration: 400ms;
+}
+
+#github-icon {
+  margin-top: 25px;
+  margin-right: 10px;
+  float: right;
+}
+
+/* footer 
+   -------------------------------------------------------------------------- */
+.foot {
+  padding: 20px 40px 20px 40px;
+  margin-top: 10px;
+  color: #FFF;
+  background-color: rgb(60, 99, 130);
+  /* font-size: small; */
+}
+
+.foot a, .foot h5 {
+  color: #FFF;
+  text-decoration: none;
+}
+
+.foot a:focus,
+.foot a:hover {
+  color: #EEE;
+  text-decoration: underline;
+}
+
+.uppa-logo {
+  display: inline-block;
+  width: 30%;
+  text-align: right;
+}
+
+.about {
+  display: inline-block;
+  width: 70%;
+  float: left;
+}
+
+/* Fix issue due to BOOTSTRAP and dash_table that share .row class  */
+.dash-spreadsheet .row {
+  flex-wrap: nowrap;
+}
+
+/* containts 
+   -------------------------------------------------------------------------- */
+.upload-area {
+  height: 60px;
+  line-height: 60px;
+  border-width: 1px;
+  border-style: dashed;
+  border-radius: 5px;
+  text-align: center;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  background-color: white;
+  box-sizing: border-box;
+}
+
+#upload-label {
+  line-height: 60px;
+  width: 40%;
+  float: left;
+  display: inline-block;
+  margin: 5px 0 5px 0;
+  vertical-align: middle;
+  font-weight: bold;
+}
+
+#dash-bio-container {
+  box-sizing: content-box;
+  width: 600px;
+  margin: 10px;
+  display: inline-block;
+  float: left;
+}
+
+#dash-bio-viewer {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+#molecule-viewer > .molecule-3d,
+#molecule-viewer > .molecule-3d > canvas {
+  width: 600px !important;
+  height: 600px !important; 
+}
+
+#data-table-container {
+  /* width: 50%; */
+  box-sizing: border-box;
+  padding: 10px;
+  width: calc(100% - 620px);
+  display: inline-block;
+}
+
+.control-panel {
+  /* margin-top: 30px; */
+  margin-bottom: 10px;
+  color: rgb(60, 99, 130);
+  background-color: rgba(60, 99, 130, 0.075);
+  padding: 0 20px 10px 20px;
+  border-top: solid rgb(60, 99, 130) 4px;
+  min-height: 260px;
+}
+
+.control-label {
+  width: 40%;
+  line-height: 30px;
+  float: left;
+  display: inline-block;
+  margin: 5px 0 5px 0;
+  /* vertical-align: middle; */
+  font-weight: bold;
+}
+
+.control {
+  margin: auto;
+  margin: 5px 0 5px 0;
+  width: 60%;
+  display: inline-block;
+}
+
+#cm-max-value, #cm-min-value {
+  width: 48%;
+  display: inline-block;
+}
+
+#cm-min-value {
+  margin-right: 4%;
+}
+
+#data-column-selector {
+  margin: 10px 0 10px 0;
+  /* min-height: 150px; */
+}
+
+.column-selector-label {
+  margin: 10px 0 10px 0;
+  font-weight: bold;
+}
+
+.checklist-label {
+  width: 33%;
+  display: inline-block;
+  margin-top: 5px;
+  font-size: 1.6rem;
+  padding: 0 5px 0 5px;
+  box-sizing: border-box;  
+}
+
+.checklist-item {
+  margin-right: 5px;
+}
+
+#download {
+  margin-top: 15px;
+  float: right;
+}
+
+/* Documentation
+   -------------------------------------------------------------------------- */
+
+.documentation {
+  /* margin-top: 10px; */
+  font-size: 1.7rem;
+  width: 80%;
+  margin: auto;
+  margin-top: 40px;
+  /* padding: 10px;
+  padding-left: 100px;
+  padding-right: 100px; */
+  text-align: justify;
+}
+
+.documentation ul {
+  list-style: disc outside;
+  padding-left: 30px;
+}
+
+.documentation li{
+  margin: 0;
+}
+
+.documentation h3 {
+  margin-top: 1.8rem;
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.documentation h4 {
+  margin-top: 1.8rem;
+  font-size: 1.8rem;
+  /* letter-spacing: 0.05rem; */
+  font-weight: bold;
+  color: gray;
+  margin-bottom: 0.5rem;
+}
+
+.documentation pre {
+  margin-bottom: 1em;
+  padding: 5px;
+  border: solid rgb(240, 240, 240) 2px;
+}
+
+.clearfix {
+  border-top: 2px rgb(60, 99, 130) solid;
+  clear: both;
+  display: block;
+  content: "";
+  margin: 0;
+}

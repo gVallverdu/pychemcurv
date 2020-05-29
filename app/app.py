@@ -88,10 +88,12 @@ case, only the structure is read.
 
 """
 
+import os
 import io
 import base64
 import urllib
 import re
+import yaml
 
 import dash
 import dash_table
@@ -107,7 +109,8 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-import utils
+import pymatgen as mg
+from pychemcurv import CurvatureAnalyzer
 
 __author__ = "Germain Salvato Vallverdu"
 __title__ = "Structural data viewer"
@@ -122,6 +125,10 @@ app = dash.Dash(__name__,
                 url_base_pathname="/mosaica/",
                 suppress_callback_exceptions=True)
 server = app.server
+
+# with open(app.get_asset_url("data/elementColors.yml"), "r") as fyml:
+with open("assets/data/elementColors.yml", "r") as fyml:
+    ELEMENT_COLORS = yaml.load(fyml, Loader=yaml.SafeLoader)["jmol"]
 
 #
 # Layout
@@ -302,6 +309,7 @@ app.layout = html.Div([header, body, footer])
      Output("data-column-selector", "options"),
      Output("data-column-selector", "value")],
     [Input("file-upload", "contents"),
+     Input("file-upload", "filename"),
      Input('data-table', 'data_timestamp')],
     [State("data-storage", "data"),
      State("data-table", "data"),
@@ -309,8 +317,8 @@ app.layout = html.Div([header, body, footer])
      State("dash-bio-viewer", "children")
      ]
 )
-def upload_data(content, table_ts, stored_data, table_data, selected_columns,
-                dbviewer):
+def upload_data(content, filename, table_ts, stored_data, table_data, 
+                selected_columns, dbviewer):
     """
     Uploads the data from an xyz file and store them in the store component.
     Then set up the dropdowns, the table and the molecule viewer.
@@ -332,53 +340,55 @@ def upload_data(content, table_ts, stored_data, table_data, selected_columns,
     else:
         # Initial set up, read data from upload
 
-        # read file
+        # read a default file
+        # filename = app.get_asset_url("data/C28-D2.xyz")
+        filename = "assets/data/C28-D2.xyz"
+        mol = mg.Molecule.from_file(filename)
+
         if content:
             content_type, content_str = content.split(",")
+            _, ext = os.path.splitext(filename)
             decoded = base64.b64decode(content_str).decode("utf-8")
-            fdata = io.StringIO(decoded)
-            species, coords, atomic_prop = utils.read_xyz(fdata)
-
-        else:
-            # filename = app.get_asset_url("data/C28-D2.xyz")
-            filename = "assets/data/C28-D2.xyz"
-            with open(filename, "r") as f:
-                species, coords, atomic_prop = utils.read_xyz(f)
+            # fdata = io.StringIO(decoded)
+            try:
+                mol = mg.Molecule.from_str(decoded, fmt=ext[1:])
+            except NameError:
+                # TODO: Manage format error 
+                print("Unable to read format")
 
         # comute data
-        df, distances = utils.compute_data(species, coords)
-        if atomic_prop:
-            df_prop = pd.DataFrame(atomic_prop, index=df.index)
-            df = pd.merge(df, df_prop, left_index=True, right_index=True)
+        ca = CurvatureAnalyzer(mol)
+        # if atomic_prop:
+        #     df_prop = pd.DataFrame(atomic_prop, index=df.index)
+        #     df = pd.merge(df, df_prop, left_index=True, right_index=True)
 
-        if "custom" not in df:
-            df["custom"] = 0.0
-
-        model_data = utils.get_molecular_data(species, coords)
+        # if "custom" not in df:
+        #     df["custom"] = 0.0
 
         # all data for the store component
-        all_data = df.to_dict("records")
+        all_data = ca.data.to_dict("records")
 
         # Set the molecule 3D Viewer component
         dbviewer = dash_bio.Molecule3dViewer(
             id='molecule-viewer',
             backgroundColor="#FFFFFF",
             # backgroundOpacity='0',
-            modelData=model_data,
+            modelData=ca.get_molecular_data(),
             atomLabelsShown=True,
             selectionType='atom'
         )
 
         # options for the checklist in order to select the columns of the table
-        selected_columns = ["atom index", "species", "angular defect",
-                            "Pyr(A)", "n_neighbors"]
+        selected_columns = ["atom_idx", "species", "angular_defect",
+                            "pyrA", "n_star_A"]
 
+    print(ca.data.columns)
     # options to select data mapped on atoms
-    options = [{"label": name, "value": name} for name in df
-               if name not in ["atom index", "species"]]
+    options = [{"label": name, "value": name} for name in ca.data
+               if name not in ["atom_idx", "species"]]
 
     # checklist options to select table columns
-    tab_options = [{"label": name, "value": name} for name in df]
+    tab_options = [{"label": name, "value": name} for name in ca.data]
 
     return all_data, dbviewer, options, tab_options, selected_columns
 
@@ -410,7 +420,7 @@ def select_table_columns(ts, values, data):
         # add format
         columns = list()
         for column in tab_df:
-            if column in {"atom index", "species", "neighbors", "custom"}:
+            if column in {"atom_idx", "species", "neighbors", "custom"}:
                 columns.append({"name": column, "id": column})
             elif column[:4] == "prop":
                 columns.append({"name": column, "id": column})
@@ -522,7 +532,7 @@ def map_data_on_atoms(selected_data, cm_name, ts, cm_min, cm_max, nan_color, dat
     else:
         styles_data = {
             str(iat): {
-                "color": utils.get_atom_color(df.species[iat]),
+                "color": ELEMENT_COLORS[df.species[iat]] if df.species[iat] in ELEMENT_COLORS else "#000000",
                 "visualization_type": "stick"
             }
             for iat in range(len(df))
@@ -617,8 +627,8 @@ def update_download_button(ts, data):
     if ts is not None:
         df = pd.DataFrame(data)
 
-        # put atom index, species, and coordinates as first columns
-        first_columns = ["atom index", "species", "x", "y", "z"]
+        # put atom_idx, species, and coordinates as first columns
+        first_columns = ["atom_idx", "species"]
         columns = df.columns.drop(first_columns)
         df = df[first_columns + list(columns)]
 

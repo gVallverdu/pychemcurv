@@ -232,3 +232,30 @@ class CurvatureAnalyzer:
         print("Read structure, done.")
 
         return CurvatureAnalyzer(structure)
+
+    def get_molecular_data(self):
+        """ 
+        Set up a model data dictionnary that contains species, coordinates and
+        bonds of the structure. This dictionnary can be used as model data for
+        further visulization in bio-dash.
+        """
+
+        # set up json file
+        model_data = {"atoms": [], "bonds": []}
+
+        # structure part
+        for iat, site in enumerate(self.structure):
+            name = "%s%d" % (site.specie.symbol, iat + 1)
+            model_data["atoms"].append({"name": name,
+                                        "serial": iat,
+                                        "element": site.specie.symbol,
+                                        "positions": site.coords.tolist()})
+
+        # bonds part
+        for bond in self.bonds:
+            iat, jat = bond
+            model_data["bonds"].append(
+                {"atom1_index": iat, "atom2_index": jat}
+            )
+
+        return model_data

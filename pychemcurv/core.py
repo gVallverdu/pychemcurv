@@ -64,7 +64,12 @@ class VertexAtom:
         The value of the improper angle is returned in radians.
 
     angular defect, ``angular_defect``
-        The angluar defect is defined as :math:`2\pi - \sum_{F\in\star(A)} \alpha_F`
+        The angluar defect is defined as 
+
+        .. math:
+
+            2\pi - \sum_{F\in\star(A)} \alpha_F
+
         where :math:`\alpha_F` are the angles at the vertex A of the faces 
         :math:`F\in\star(A)`. The angular defect is computed whatever the number
         of atoms in :math:`\star(A)`.
@@ -78,7 +83,7 @@ class VertexAtom:
 
         .. math::
 
-            \kappa(A) = \frac{1}{\sqrt{\ell^2 + \dfrac{OA^2 - \ell^2}{4z_A^2}}}
+            \kappa(A) = \frac{1}{\sqrt{\ell^2 + \dfrac{(OA^2 - \ell^2)^2}{4z_A^2}}}
 
         where O is the center of the circumbscribed circle of atoms in 
         :math:`\star(A)` ; A the vertex atom ; OA the distance between O and A ;
@@ -212,12 +217,13 @@ class VertexAtom:
         return np.abs(np.dot(self._a - com, n_a))
 
     @property
-    def pyrA_r(self):
-        """ Return the pyramidalization angle in radians. """
+    def POAV(self):
+        r""" Return a normalized vector in :math:`\mathbb{R}^3` along the
+        POAV vector in the same frame as input coordinates. """
 
         # check input coords
         if self._star_a.shape[0] < 3:
-            return np.nan
+            return np.empty(3) * np.nan
 
         # get the normal vector to the plane defined from *(A)
         _, _, n_a = get_plane(self.reg_star_a)
@@ -226,10 +232,20 @@ class VertexAtom:
         IA = self._a - center_of_mass(self.reg_star_a)
         n_a = -n_a if np.dot(IA, n_a) < 0 else n_a
 
+        return n_a
+
+    @property
+    def pyrA_r(self):
+        """ Return the pyramidalization angle in radians. """
+
+        # check input coords
+        if self._star_a.shape[0] < 3:
+            return np.nan
+
         # compute pyrA
         v = self.reg_star_a[0] - self._a
         v /= np.linalg.norm(v)
-        pyrA = np.arccos(np.dot(v, n_a)) - np.pi / 2
+        pyrA = np.arccos(np.dot(v, self.POAV)) - np.pi / 2
 
         return pyrA
 
@@ -478,22 +494,24 @@ class Hybridization:
     @property
     def c_pi(self):
         r""" 
-        Value of :math:`c_{\pi}` 
+        Value of :math:`c_{\pi}` in the ideal case of a :math:`C_{3v}` 
+        geometry. Equation (22), with :math:`c_{1,2} = \sqrt{2/3}`.
 
         .. math::
 
-            c_{\pi} = \sqrt{3} \tan Pyr(A)
+            c_{\pi} = \sqrt{2} \tan Pyr(A)
         """
         return np.sqrt(2) * np.tan(self._pyrA)
 
     @property
     def lambda_pi(self):
         r""" 
-        value of :math:`\lambda_{\pi}` 
+        value of :math:`\lambda_{\pi}` in the ideal case of a :math:`C_{3v}` 
+        geometry. Equation (23), with :math:`c^2_{1,2} = 2/3`.
 
         .. math::
 
-            \lambda_{\pi} = \sqrt{1 - 3 \tan^2 Pyr (A)} 
+            \lambda_{\pi} = \sqrt{1 - 2 \tan^2 Pyr (A)} 
         """
 
         # check domain definition of lambda_pi
@@ -510,7 +528,7 @@ class Hybridization:
     @property
     def m(self):
         r""" 
-        value of hybridization number m 
+        value of hybridization number m, see equation (44) 
 
         .. math::
 
@@ -521,7 +539,7 @@ class Hybridization:
     @property
     def n(self):
         """ 
-        value of hybridization number n 
+        value of hybridization number n, see equation (47)
 
         .. math::
 

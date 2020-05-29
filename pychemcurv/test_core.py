@@ -52,6 +52,13 @@ class VertexAtomTests(unittest.TestCase):
         self.assertAlmostEqual(self.va_rand.pyrA, 18.7104053164)
         self.assertAlmostEqual(self.va_rand.pyrA_r, np.radians(18.7104053164))
 
+    def test_POAV(self):
+        self.assertTrue(np.allclose(self.va_sp3.POAV, [0., 0., 1.]))
+        self.assertTrue(np.allclose(self.va_sp2.POAV, [0., 0., 1.]))
+        print(self.va_rand.POAV)
+        self.assertTrue(np.allclose(self.va_rand.POAV,
+                                    [-0.81987531,  0.24597365, -0.51701203]))
+
     def test_angular_defect(self):
         self.assertAlmostEqual(self.va_sp3.angular_defect,
                                2 * np.pi - 3 * np.arccos(- 1 / 3))

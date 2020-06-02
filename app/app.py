@@ -5,57 +5,122 @@
 ## Documentation
 
 This application aims to visualize local geometric informations about a
-molecular structure. In particular, the application computes geometric
-quantities which provide an insight of the discrete curvature of a molecular
-structure. In addition, from upload or by editing the table, you can visualize 
-any atomic properties.
+molecular structure using the 
+[`pychemcurv`](https://pychemcurv.readthedocs.io/) package. In particular,
+the application computes geometric quantities which provide an insight of the 
+discrete curvature of a molecular or periodic structure. 
+
+Custom data can be visualized by editing manually the table.
 
 ### Global overview
 
-The tools on the right control the visualization. The options on the left
-allow to select the column displayed in the table.
+The dashed box on the top of the page
+allows you to upload an xyz file. Click into the box or drag and
+drop your file there. The page is splitted in three parts. On the left, you can 
+visualize your structure, on the rigth, the selected data are plotted and below
+a that gathers the data.
 
 #### On the left
 
-* The dashed box allows to upload the xyz file.
-* The *"Select data"* menu, allows to select the data you want to visualize on 
+* The *"Select data"* dropdown, allows to select the data you want to map on 
 the structure.
-* The *"Select colormap"* menu, changes the colormap. The `_r` label 
-corresponds to colormap in inverse order.
-* The *"colormap boundaries"* inputs change the min and max values used to 
+* The *"Select colormap"* dropdown, allows you to select a colormap. The `_r` 
+label corresponds to colormap in reverse order.
+* The *"bounds"* inputs change the min and max values used to 
 compute the colors associated to the data.
+* The *"Nan color"* input, can be used to set a color to atoms for which the
+selected data does not exist.
 
 #### On the right
 
-The right panel displays a table of the data. Select the columns you want to 
-show using the check boxes. The value in the table can be modified and the 
+By default, the right panel displays an histogram of the selected data, used
+on the structure visualization. On top of this plot, a box plot presents an
+overview of the distribution. Below the plot, a table gathers statistical
+information of the data. In that case, the slider allows you to change
+the number of bins of the histogram.
+
+The dropdown menu *"Hisogram or abscissa"* allows you to plot either an
+histogram of the selected data (default) or to plot the selected data as 
+a function of another data. In that case, a trend line is also plotted.
+Statistical information of both data are then 
+displayed in the table below the plot.
+
+#### Data table
+
+Below the visualization part, a table displays all the data provided by the
+`pychemcurv` package. Select the columns you want to see using the dropdown
+menu. All the table is editable, manually, and the 
 visualization is updated each time you modify a value.
 
 If you want to add manualy custom data, you can add the `custom` column to the
-table and fill it with your values. You can copy and pasta data from a 
+table and fill it with your values. You can copy and paste data from a 
 spreadsheet or a text file.
 
-The whole data can be downloaded in csv format from the button at the top.
+The whole data can be downloaded in csv format from the `export` button at the 
+top.
 
 **Warning:** If you edit the data in the table, you have first to refresh the
 application before uploading a new molecule.
 
 ### Geometrical data
 
-The definitions of the geometrical data available by default are given below.
-Some of them are available only if there is a minimum number of bonds:
+All the definitions of the atomic quantities available in this application are
+defined in details in
+[this publication](https://hal.archives-ouvertes.fr/hal-02490358/document) 
+or are briefly described in the
+[pychemcurv documentation](https://pychemcurv.readthedocs.io/en/latest/).
 
-* **Angular defect (degrees):** The angular defect is a measure of the discrete curvature
-on a given atom. It is computed as360° minus the sum of the angles between bonds with atoms
-bonded to the considered atom.
-* **haddon (degrees):** This is the pyramidalization angle as defined by 
-[R.C. Haddon, _C60: Sphere or Polyhedron?_, J. Am. Chem. Soc. **1997**](https://pubs.acs.org/doi/10.1021/ja9637659)
-* **improper angle (degrees):** This is the improper dihedral angle
-* **dist. from. ave. plane (angstrom):** This is the distance between the
-considered atom and the average plane defined by atoms bonded to it.
-* **neighbors (number):** This is the number of neighbors of the atom
-* **ave. neighb. dist. (angstrom):** This is the average distance between the 
-considered atom and its neighbors.
+Hereafter is a quick list that gives the units of the quantities:
+
+`atom_idx`
+: index of the atom in the system, starting from 0
+
+`species`
+: chemical element as provided in the xyz file
+
+`pyrA`
+: pyramidalization angle in degrees
+
+`angular_defect`
+: angular defect in degrees
+
+`n_star_A`
+: number of atoms bonded to this atom
+
+`spherical_curvature`
+: spherical curvature, no unit
+
+`improper`
+: improper angle in degrees
+
+`pyr_distance`
+: distance of atom A from the plane defined from atoms bonded to A
+
+`atom_A`
+: coordinates of atom A
+
+`star_A`
+: coordinates of atom bonded to A
+
+`hybridization`
+: hybridization as define by Haddon et al., n tilde, amount of pz AO in 
+the system sigma
+
+`m`
+: `m = (c_pi / lambda_pi)^2`
+
+`n`
+: `n = 3m + 2`
+
+`c_pi^2`
+: c_pi is the coefficient of the s AO in the h_pi hybrid orbital
+
+`lambda_pi^2`
+: lambda_pi is the coefficient of the p_pi AO in the h_pi hybrid orbital
+
+`ave. neighb. dist.`
+: Average distance with neighbors of atom A.
+
 
 ### File and data upload
 
@@ -71,27 +136,12 @@ cartesian coordinates as 2d, 3th and 4th columns, for example:
     H    0.966057  0.959148 -1.089095
     H    0.796629 -1.497157  0.403985
 
-
-If additional data are provided on each line, they are returned as
-atomic properties and can be visualized. The names of theses additional atomic
-properties are `propX`, `X` being a number. For example, the file below will provide
-an atomic properties with name `prop0`:
-
-    3
-    H2O molecule
-    O   -0.111056  0.033897  0.043165   -1.8
-    H    0.966057  0.959148 -1.089095    0.9
-    H    0.796629 -1.497157  0.403985    0.9
-
-The number of provided data must be the same on each line. If this is not the
-case, only the structure is read.
+Coordinates have to be in angstrom to determine correctly the connectivity.
 
 """
 
 import os
-import io
 import base64
-import urllib
 import re
 import yaml
 
@@ -102,6 +152,7 @@ import dash_html_components as html
 import dash_core_components as dcc
 from dash.dependencies import Input, Output, State
 import plotly.graph_objs as go
+import plotly.express as px
 import dash_bio
 
 import pandas as pd
@@ -113,7 +164,7 @@ import pymatgen as mg
 from pychemcurv import CurvatureAnalyzer
 
 __author__ = "Germain Salvato Vallverdu"
-__title__ = "Structural data viewer"
+__title__ = "Pychemcurv data viewer"
 __subtitle__ = "Part of the Mosaica project"
 
 HEX_COLOR_PATT = re.compile(r"^#[A-Fa-f0-9]{6}$")
@@ -134,41 +185,57 @@ with open("assets/data/elementColors.yml", "r") as fyml:
 # Layout
 # ------------------------------------------------------------------------------
 
+# --- define tab style
+tab_style_header = {
+    'backgroundColor': 'white',
+    "padding": "5px",
+    'fontWeight': 'bold',
+    "textAlign": "center",
+    "borderBottom": "2px solid rgb(60, 93, 130)",
+    "borderTop": "2px solid rgb(60, 93, 130)",
+    "fontFamily": "sans-serif"
+}
+
+style_data_conditional = [
+    {'if': {'row_index': 'odd'}, 'backgroundColor': 'rgba(60, 93, 130, .05)'}
+]
+
 # --- header ---
 header = html.Div(className="head", children=[
-    html.H1(children=[html.Span(className="fas fa-atom"), " ", __title__]),
-    # html.H2(__subtitle__)
-    html.A(
-        id="github-link",
-        href="https://github.com/gVallverdu/pychemcurv",
-        children=[
-            "View on GitHub",
-        ]
-    ),
-    html.Span(id="github-icon", className="fab fa-github fa-2x"),
+    html.Div(className="container", children=[
+        html.H1(children=[html.Span(className="fas fa-atom"), " ", __title__]),
+        # html.H2(__subtitle__)
+        html.A(
+            id="github-link",
+            href="https://github.com/gVallverdu/pychemcurv",
+            children=[
+                "View on GitHub",
+            ]
+        ),
+        html.Span(id="github-icon", className="fab fa-github fa-2x"),
+    ])
 ])
 
 # --- Footer ---
 footer = html.Div(className="foot", children=[
     html.Div(className="container", children=[
-        html.Div(className="about", children=[
-            html.H5("About:"),
-            html.P([
+        html.Div(className="row", children=[
+            html.Div(className="eight columns", children=[
+                html.H5("About:"),
                 html.A("Germain Salvato Vallverdu",
-                       href="https://gsalvatovallverdu.gitlab.io/")]),
-            html.P(
+                        href="https://gsalvatovallverdu.gitlab.io/"),
+                html.Br(),
+                html.A("University of Pau & Pays Adour", 
+                       href="https://www.univ-pau.fr") 
+            ]),
+            html.Div(className="four columns", children=[
                 html.A(href="https://www.univ-pau.fr", children=[
-                    "University of Pau & Pays Adour"
+                    html.Img(
+                        src=app.get_asset_url("img/LogoUPPAblanc.png"),
+                    )
                 ])
-            )
+            ])
         ]),
-        html.Div(className="uppa-logo", children=[
-            html.A(href="https://www.univ-pau.fr", children=[
-                html.Img(
-                    src=app.get_asset_url("img/LogoUPPAblanc.png"),
-                )
-            ])]
-        )
     ])
 ])
 
@@ -178,120 +245,170 @@ body = html.Div(className="container", children=[
     # --- store components for the data
     dcc.Store(id="data-storage", storage_type="memory"),
 
-    # -- two sides div
-    html.Div(children=[
-        # --- dash bio Molecule 3D Viewer
-        html.Div(id="dash-bio-container", children=[
-            html.H4("Structure"),
-
-            # --- controls
-            html.Div(className="control-panel", children=[
-                # --- upload
-                html.Div(id="upload-label", children="Upload xyz file"),
-                dcc.Upload(
-                    id='file-upload',
-                    children=html.Div(
-                        className="upload-area control",
-                        children="Drag and Drop or click to select file"
-                    ),
+    # --- upload part
+    html.Div(className="row", id="top-panel", children=[
+        # --- upload xyz file
+        html.Div(className="four columns", children=[
+            dcc.Upload(
+                id='file-upload',
+                children=html.Div(
+                    className="upload-area control",
+                    children="Upload xyz file here"
                 ),
-
-                # --- select data to plot
-                html.Div(className="control-label", children="Select data"),
-                dcc.Dropdown(
-                    className="control",
-                    id='dropdown-data',
-                    placeholder="Select data"
-                ),
-
-                # --- select colormap
-                html.Div(className="control-label",
-                         children="Select colormap"),
-                dcc.Dropdown(
-                    className="control",
-                    id='dropdown-colormap',
-                    options=[{"label": cm, "value": cm}
-                             for cm in plt.cm.cmap_d],
-                    value="cividis"
-                ),
-
-                # --- colormap boundaries
-                html.Div(className="control-label",
-                         children="Colormap boundaries"),
-                html.Div(className="control", children=[
-                    dcc.Input(id="cm-min-value", type="number", debounce=True,
-                              placeholder=0),
-                    dcc.Input(id="cm-max-value", type="number", debounce=True,
-                              placeholder=0),
-                ]),
-
-                # --- nan color selector
-                html.Div(className="control-label",
-                         children="Color of NaN values"),
-                dcc.Input(
-                    className="control",
-                    id="nan-color-value",
-                    debounce=True,
-                    placeholder="#000000",
-                    type="text",
-                    pattern=u"^#[A-Fa-f0-9]{6}$"
-                ),
-
-                html.P("Click on atoms to highlight the corresponding lines"
-                       " in the table on the right."),
-            ]),
-            dcc.Graph(id='colorbar', config=dict(displayModeBar=False)),
-            html.Div(id="dash-bio-viewer"),
+            ),
         ]),
 
-        # --- Data table
-        html.Div(id="data-table-container", children=[
-            html.A(
-                html.Button("Download data", id="download-button"),
-                id="download",
-                download="rawdata.csv",  href="",
-                target="_blank",
-            ),
-            html.H4("Data Table"),
-            html.Div(className="control-panel", children=[
-                html.Div(className="column-selector-label",
-                         children="Select the columns of the table:"),
-                dcc.Checklist(
-                    id="data-column-selector",
-                    value=[],
-                    inputClassName="checklist-item",
-                    labelClassName="checklist-label",
-                ),
-            ]),
-            html.Div(children=[
-                dash_table.DataTable(
-                    id="data-table",
-                    editable=True,
-                    row_selectable="multi",
-                    style_cell={'minWidth': '60px', 'whiteSpace': 'normal'},
-                    style_header={
-                        'backgroundColor': 'white',
-                        "padding": "5px",
-                        'fontWeight': 'bold',
-                        "textAlign": "center",
-                        "borderBottom": "2px solid rgb(60, 93, 130)",
-                        "borderTop": "2px solid rgb(60, 93, 130)",
-                        "fontFamily": "sans-serif"},
-                    style_data_conditional=[{
-                        'if': {'row_index': 'odd'},
-                        'backgroundColor': 'rgba(60, 93, 130, .05)'
-                    }],
-                    style_table={"overflowX": "scroll",
-                                 "maxHeight": "700px",
-                                 "overflowY": "scroll"},
-                    fixed_rows={'headers': True, 'data': 0}
-                )
-            ]),
+        # --- intro text
+        html.Div(className="eight columns", children=[
+            dcc.Markdown("""
+            The [documentation is available at the bottom of this page](#documentation). 
+
+            Upload an xyz file on the left. The structure will appear
+            on the left and the data can be plotted on the right.
+            A [data table is available below](#data-table-title). 
+
+            """)
         ])
     ]),
-    html.Hr(className="clearfix"),
+
+    html.Div(className="row", children=[
+        # --- left panel: 3D visualization
+        html.Div(id="left-panel", children=[
+
+            # --- dash bio Molecule 3D Viewer
+            html.Div(id="dash-bio-viewer"),
+
+            # --- color bar
+            dcc.Graph(id='colorbar', config=dict(displayModeBar=False)),
+
+            # --- controls of mapped data
+            html.Div(className="row", children=[
+
+                # --- select data
+                html.Div(className="six columns", children=[
+                    html.Span("Select data", className="control-label"),
+                    dcc.Dropdown(id='dropdown-data',
+                                 placeholder="Select data"),
+                ]),
+
+                # --- colormap
+                html.Div(className="six columns", children=[
+                    html.Span("Colormap", className="control-label"),
+                    dcc.Dropdown(
+                        id='dropdown-colormap',
+                        options=[{"label": cm, "value": cm}
+                                 for cm in plt.cm.cmap_d],
+                        value="cividis"
+                    ),
+
+                    # --- colormap boundaries
+                    html.Div(className="row", children=[
+                        html.Div(className="four columns", children=[
+                            html.Span(
+                                "bounds", className="control-label",
+                                style={"lineHeight": "38px"}
+                            )
+                        ]),
+                        html.Div(className="four columns", children=[
+                            dcc.Input(
+                                id="cm-min-value", type="number", debounce=True,
+                                placeholder="min", style={"width": "100%"}),
+                        ]),
+                        html.Div(className="four columns", children=[
+                            dcc.Input(
+                                id="cm-max-value", type="number", debounce=True,
+                                placeholder="max", style={"width": "100%"}),
+                        ]),
+                    ], style={"marginTop": "10px"}),
+
+                    # --- nan color selector
+                    html.Div(className="row", children=[
+                        html.Div(className="four columns", children=[
+                            html.Span(
+                                "Nan color", className="control-label",
+                                style={"lineHeight": "38px"}
+                            )
+                        ]),
+                        html.Div(className="eight columns", children=[
+                            dcc.Input(
+                                id="nan-color-value",
+                                debounce=True,
+                                placeholder="#000000",
+                                type="text",
+                                pattern=u"^#[A-Fa-f0-9]{6}$",
+                                style={"width": "100%"},
+                            ),
+                        ]),
+                    ], style={"marginTop": "10px"})
+                ]),
+            ]),
+        ]),
+
+        # --- right panel: plot data
+        html.Div(id="right-panel", children=[
+
+            # --- plot figure
+            dcc.Graph(id='plot-data'),
+
+            # --- a table of the selected data
+            dash_table.DataTable(
+                id="plot-data-table",
+                style_header=tab_style_header,
+                style_data_conditional=style_data_conditional,
+            ),
+
+            html.Div(className="row", children=[
+                # --- select histogram or absicssa
+                html.Div(className="six columns", children=[
+                    html.Span("Histogram or abscissa", className="control-label"),
+                    dcc.Dropdown(
+                        id="plot-data-selector",
+                        options=[{"label": "histogram", "value": "histogram"}],
+                        value="histogram",
+                        placeholder="Plot more data",
+                    ),
+                ]),
+
+                # --- number of bins for histogram
+                html.Div(className="six columns", children=[
+                    html.Span("# bins", className="control-label"),
+                    dcc.Slider(
+                        id="nbins-slider",
+                        min=5, max=50, step=1,
+                        value=30,
+                        marks={i: "%d" % i for i in range(5, 51, 5)},
+                    ),
+                ]),
+            ], style={"marginTop": "10px"}),
+        ]),
+    ]),
+
+    # --- Data table
+    html.Div(id="data-table-container", children=[
+        html.H4("Data Table", id="data-table-title"),
+        html.Div(className="column-selector-label",
+                 children="Select the columns of the table:"),
+        dcc.Dropdown(
+            id="data-column-selector",
+            multi=True,
+            clearable=False,
+        ),
+
+        html.Div(children=[
+            dash_table.DataTable(
+                id="data-table",
+                export_format='csv',
+                export_columns="all",
+                editable=True,
+                style_header=tab_style_header,
+                style_data_conditional=style_data_conditional,
+            )
+        ]),
+    ]),
+
+    # --- Documentation
     html.Div(className="documentation", children=[
-        dcc.Markdown(__doc__)
+        dcc.Markdown(__doc__, id="documentation")
     ])
 ])
 
@@ -307,7 +424,8 @@ app.layout = html.Div([header, body, footer])
      Output("dash-bio-viewer", "children"),
      Output("dropdown-data", "options"),
      Output("data-column-selector", "options"),
-     Output("data-column-selector", "value")],
+     Output("data-column-selector", "value"),
+     Output("plot-data-selector", "options")],
     [Input("file-upload", "contents"),
      Input("file-upload", "filename"),
      Input('data-table', 'data_timestamp')],
@@ -317,7 +435,7 @@ app.layout = html.Div([header, body, footer])
      State("dash-bio-viewer", "children")
      ]
 )
-def upload_data(content, filename, table_ts, stored_data, table_data, 
+def upload_data(content, filename, table_ts, stored_data, table_data,
                 selected_columns, dbviewer):
     """
     Uploads the data from an xyz file and store them in the store component.
@@ -353,17 +471,14 @@ def upload_data(content, filename, table_ts, stored_data, table_data,
             try:
                 mol = mg.Molecule.from_str(decoded, fmt=ext[1:])
             except NameError:
-                # TODO: Manage format error 
+                # TODO: Manage format error
                 print("Unable to read format")
 
         # comute data
         ca = CurvatureAnalyzer(mol)
-        # if atomic_prop:
-        #     df_prop = pd.DataFrame(atomic_prop, index=df.index)
-        #     df = pd.merge(df, df_prop, left_index=True, right_index=True)
 
-        # if "custom" not in df:
-        #     df["custom"] = 0.0
+        # add a custom column for manual editing
+        ca.data["custom"] = 0.0
 
         # all data for the store component
         all_data = ca.data.to_dict("records")
@@ -382,15 +497,15 @@ def upload_data(content, filename, table_ts, stored_data, table_data,
         selected_columns = ["atom_idx", "species", "angular_defect",
                             "pyrA", "n_star_A"]
 
-    print(ca.data.columns)
     # options to select data mapped on atoms
     options = [{"label": name, "value": name} for name in ca.data
-               if name not in ["atom_idx", "species"]]
+               if name not in ["atom_idx", "species", "atom_A", "star_A"]]
+    options2 = [{"label": "histogram", "value": "histogram"}] + options
 
     # checklist options to select table columns
     tab_options = [{"label": name, "value": name} for name in ca.data]
 
-    return all_data, dbviewer, options, tab_options, selected_columns
+    return all_data, dbviewer, options, tab_options, selected_columns, options2
 
 
 @app.callback(
@@ -422,8 +537,9 @@ def select_table_columns(ts, values, data):
         for column in tab_df:
             if column in {"atom_idx", "species", "neighbors", "custom"}:
                 columns.append({"name": column, "id": column})
-            elif column[:4] == "prop":
-                columns.append({"name": column, "id": column})
+            elif column == "custom":
+                columns.append(
+                    {"name": column, "id": column, "editable": True})
             else:
                 columns.append({
                     "name": column, "id": column, "type": "numeric",
@@ -434,45 +550,6 @@ def select_table_columns(ts, values, data):
                 })
 
         return data, columns
-
-
-@app.callback(
-    [Output("data-table", "style_data_conditional"),
-     Output("data-table", "selected_rows")],
-    [Input("molecule-viewer", "selectedAtomIds")]
-)
-def select_rows_from_atoms(atom_ids):
-    """
-    Highlights the rows corresponding to the selected atoms in the molecule
-    viewer.
-    """
-
-    style_data_conditional = [{'if': {'row_index': 'odd'},
-                               'backgroundColor': 'rgba(60, 93, 130, .05)'}]
-    if atom_ids:
-        for iat in atom_ids:
-            style_data_conditional.append({
-                "if": {"row_index": iat},
-                "backgroundColor": 'rgba(60, 93, 130, .75)',
-                "color": "white",
-            })
-
-    return style_data_conditional, list(atom_ids)
-
-
-# @app.callback(
-#     Output("molecule-viewer", "selectedAtomIds"),
-#     [Input("data-table", "selected_rows")]
-# )
-# def select_atom_from_table(rows):
-#     """
-#     Select atom from rows selected in the table
-#     """
-#     if rows:
-#         print(rows)
-#         return list(rows)
-#     else:
-#         return []
 
 
 @app.callback(
@@ -497,9 +574,9 @@ def map_data_on_atoms(selected_data, cm_name, ts, cm_min, cm_max, nan_color, dat
         minval, maxval = np.nanmin(values), np.nanmax(values)
 
         # get cm boundaries values from inputs if they exist
-        if cm_min:
+        if cm_min is not None:
             minval = cm_min
-        if cm_max:
+        if cm_max is not None:
             maxval = cm_max
 
         # check nan_color value
@@ -509,18 +586,19 @@ def map_data_on_atoms(selected_data, cm_name, ts, cm_min, cm_max, nan_color, dat
         normalize = mpl.colors.Normalize(minval, maxval)
 
         cm = plt.cm.get_cmap(cm_name)
- 
+
         colors = list()
         for value in values:
             if np.isnan(value):
                 colors.append(nan_color)
             else:
-                colors.append(mpl.colors.rgb2hex(cm(X=normalize(value), alpha=1)))
+                colors.append(mpl.colors.rgb2hex(
+                    cm(X=normalize(value), alpha=1)))
 
 #        nan_idx = np.nonzero(np.isnan(values))[0]
 #        norm_cm = cm(X=normalize(values), alpha=1)
 #        colors = [mpl.colors.rgb2hex(color) for color in norm_cm]
- 
+
         styles_data = {
             str(iat): {
                 "color": colors[iat],
@@ -532,7 +610,8 @@ def map_data_on_atoms(selected_data, cm_name, ts, cm_min, cm_max, nan_color, dat
     else:
         styles_data = {
             str(iat): {
-                "color": ELEMENT_COLORS[df.species[iat]] if df.species[iat] in ELEMENT_COLORS else "#000000",
+                "color": ELEMENT_COLORS[df.species[iat]]
+                if df.species[iat] in ELEMENT_COLORS else "#000000",
                 "visualization_type": "stick"
             }
             for iat in range(len(df))
@@ -561,10 +640,10 @@ def plot_colorbar(selected_data, cm_name, data_ts, cm_min, cm_max, data):
         minval, maxval = np.nanmin(values), np.nanmax(values)
 
         # get cm boundaries values from inputs if they exist
-        if cm_min:
+        if cm_min is not None:
             minval = cm_min
 
-        if cm_max:
+        if cm_max is not None:
             maxval = cm_max
 
         # set up fake data and compute corresponding colors
@@ -594,51 +673,119 @@ def plot_colorbar(selected_data, cm_name, data_ts, cm_min, cm_max, data):
         figure = go.Figure(
             data=trace,
             layout=go.Layout(
-                width=580, height=100,
+                width=600, height=100,
                 xaxis=dict(showgrid=False, title=selected_data),
                 yaxis=dict(ticks="", showticklabels=False),
-                margin=dict(l=40, t=0, b=40, r=20, pad=0)
+                margin=dict(t=0, b=0, l=0, r=0)
+                # margin=dict(l=40, t=0, b=40, r=20, pad=0)
             )
         )
     else:
         figure = go.Figure(
             data=[],
             layout=go.Layout(
-                width=550, height=100,
+                width=600, height=100,
                 xaxis=dict(ticks="", showticklabels=False, showgrid=False,
                            title=selected_data, zeroline=False),
                 yaxis=dict(ticks="", showticklabels=False, showgrid=False,
                            title=selected_data, zeroline=False),
-                margin=dict(l=5, t=0, b=40, r=5, pad=0)
+                margin=dict(l=0, t=0, b=0, r=0, pad=0)
             )
         )
 
     return figure
 
 
-@app.callback(Output('download', 'href'),
-              [Input('data-storage', 'modified_timestamp')],
-              [State("data-storage", "data")])
-def update_download_button(ts, data):
+@app.callback(
+    [Output("plot-data", "figure"),
+     Output("plot-data-table", "data"),
+     Output("plot-data-table", "columns")],
+    [Input('dropdown-data', 'value'),
+     Input("data-storage", "modified_timestamp"),
+     Input("plot-data-selector", "value"),
+     Input("nbins-slider", "value")],
+    [State("data-storage", "data")]
+)
+def plot_data(selected_data1, data_ts, selected_data2, nbins, data):
     """
-    Return a link with the data in csv format.
+    Make a plot according to the data mapped on the structure. By default
+    a histogram of the data is plotted. If another abscissa is chosen the
+    data are plotted against this abscissa. 
+
+    Statistical descriptors of these data are displayed on a table.
     """
 
-    if ts is not None:
-        df = pd.DataFrame(data)
+    figure = go.Figure(data=[],
+                       layout=go.Layout(template="plotly_white", height=600))
+    tabdata = list()
+    columns = list()
 
-        # put atom_idx, species, and coordinates as first columns
-        first_columns = ["atom_idx", "species"]
-        columns = df.columns.drop(first_columns)
-        df = df[first_columns + list(columns)]
+    if selected_data1:
+        df = pd.DataFrame(data).dropna()
 
-        csv_string = df.to_csv(index=False, encoding="utf-8")
-        csv_string = "data:text/csv;charset=utf-8," + \
-            urllib.parse.quote(csv_string)
-        return csv_string
+        # plot a histogram
+        if selected_data2 == "histogram":
+            figure = px.histogram(
+                data_frame=df,
+                x=selected_data1,
+                histnorm="probability",
+                marginal="box",
+                nbins=nbins,
+                height=600,
+                color_discrete_sequence=["#2980b9"],
+                title=selected_data1,
+                template="plotly_white",
+            )
+            figure.layout.update(
+                yaxis=dict(showgrid=False),
+                xaxis=dict(showgrid=False),
+            )
 
-    else:
-        return "#"
+        # scatter plot with trend line
+        else:
+            figure = px.scatter(
+                data_frame=df,
+                x=selected_data2, y=selected_data1,
+                symbol_sequence=["circle-open"],
+                color_discrete_sequence=["#2980b9"],
+                template="plotly_white",
+            )
+            figure.update_traces(marker=dict(size=10, line=dict(width=3)))
+
+            # add a polynomial trend line to the plot
+            xmin = np.nanmin(df[selected_data2])
+            xmax = np.nanmax(df[selected_data2])
+            xmin -= .05 * (xmax - xmin)
+            xmax += .05 * (xmax - xmin)
+            x = np.linspace(xmin, xmax, 100)
+            p = np.poly1d(np.polyfit(
+                df[selected_data2], df[selected_data1], deg=2))
+            figure.add_trace(
+                go.Scatter(
+                    x=x, y=p(x),
+                    mode="lines", showlegend=False,
+                    line=dict(color="#2980b9", width=1),
+                )
+            )
+
+        # set up table of plotted data with statistical descriptors
+        if selected_data2 == "histogram":
+            tabdata = df[selected_data1].describe().to_frame(
+                name=selected_data1)
+        else:
+            tabdata = df[[selected_data1, selected_data2]].describe()
+
+        tabdata = tabdata.transpose()
+        tabdata.index.name = "data"
+        tabdata.reset_index(inplace=True)
+
+        columns = ["data", 'mean', 'std', 'min', '25%', '50%', '75%', 'max']
+        tabdata = tabdata[columns].to_dict("records")
+        fformat = Format(precision=4, scheme=Scheme.fixed)
+        columns = [{"name": c, "id": c, "type": "numeric", "format": fformat}
+                   for c in columns]
+
+    return figure, tabdata, columns
 
 
 if __name__ == '__main__':

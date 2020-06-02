@@ -72,12 +72,16 @@ or using ``conda``
 
     conda env create -f environment.yml
 
+
 Citing pychemcurv
 =================
 
 Julia Sabalot-Cuzzubbo, Germain Vallverdu, Jacky Cresson and Didier Bégué,
 *Relating the shape of a molecule and its reactivity - Haddon's Curvature and
 the Pyramidalization Angle*, *Under review*
+
+`link to the preprint on HAL <https://hal.archives-ouvertes.fr/hal-02490358/document>`_.
+
 
 Licence and contact
 ===================

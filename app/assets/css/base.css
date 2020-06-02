@@ -32,22 +32,16 @@
     z-index: 1002;
 }*/
 
-/* Remove Undo Button
---------------------------------------------------*/
-._dash-undo-redo {
-    display: none;
-  }
 
 /* Grid
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
-/* .container {
+.container {
   position: relative;
   width: 100%;
-  max-width: 960px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 0 20px;
-  box-sizing: border-box; 
-} */
+  box-sizing: border-box; }
 .column,
 .columns {
   width: 100%;
@@ -57,14 +51,14 @@
 /* For devices larger than 400px */
 @media (min-width: 400px) {
   .container {
-    width: 85%;
+    width: 95%;
     padding: 0; }
 }
 
 /* For devices larger than 550px */
 @media (min-width: 550px) {
   .container {
-    width: 80%; }
+    width: 95%; }
   .column,
   .columns {
     margin-left: 4%; }
@@ -138,9 +132,7 @@ body {
   line-height: 1.6;
   font-weight: 400;
   font-family: "Open Sans", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  color: rgb(50, 50, 50); 
-  margin: 0!important;
-  }
+  color: rgb(50, 50, 50); }
 
 
 /* Typography
@@ -328,16 +320,16 @@ li {
 table {
   border-collapse: collapse;
 }
-th,
-td {
+th:not(.CalendarDay),
+td:not(.CalendarDay) {
   padding: 12px 15px;
   text-align: left;
   border-bottom: 1px solid #E1E1E1; }
-th:first-child,
-td:first-child {
+th:first-child:not(.CalendarDay),
+td:first-child:not(.CalendarDay) {
   padding-left: 0; }
-th:last-child,
-td:last-child {
+th:last-child:not(.CalendarDay),
+td:last-child:not(.CalendarDay) {
   padding-right: 0; }
 
 

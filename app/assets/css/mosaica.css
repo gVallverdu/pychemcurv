@@ -4,14 +4,7 @@
  
 body {
     background: #ffffff;
-}
-
-.container {
-  max-width: 1280px;
-  margin: auto;
-  width: 100%;
-  padding: 5px;
-  box-sizing: border-box;
+    margin: 0px;
 }
 
 h2, h3, h4, h5, H6 {
@@ -23,6 +16,7 @@ h2, h3, h4, h5, H6 {
 .head {
   color: #fff;
   background-color: rgb(60, 99, 130);
+  border-bottom: solid 10px rgb(40, 66, 87);
   height: 80px;
 }
 
@@ -76,11 +70,12 @@ h2, h3, h4, h5, H6 {
 /* footer 
    -------------------------------------------------------------------------- */
 .foot {
-  padding: 20px 40px 20px 40px;
+  padding: 10px 40px 10px 40px;
   margin-top: 10px;
   color: #FFF;
   background-color: rgb(60, 99, 130);
   /* font-size: small; */
+  border-top: solid 10px rgb(40, 66, 87);
 }
 
 .foot a, .foot h5 {
@@ -94,25 +89,21 @@ h2, h3, h4, h5, H6 {
   text-decoration: underline;
 }
 
-.uppa-logo {
-  display: inline-block;
-  width: 30%;
-  text-align: right;
-}
-
-.about {
-  display: inline-block;
-  width: 70%;
-  float: left;
-}
-
 /* Fix issue due to BOOTSTRAP and dash_table that share .row class  */
-.dash-spreadsheet .row {
+/* .dash-spreadsheet .row {
   flex-wrap: nowrap;
-}
+} */
 
 /* containts 
    -------------------------------------------------------------------------- */
+#top-panel {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  /* color: rgb(60, 99, 130); */
+  /* padding: 0 20px 10px 20px; */
+  /* border-bottom: solid rgb(60, 99, 130) 4px; */
+}
+
 .upload-area {
   height: 60px;
   line-height: 60px;
@@ -120,28 +111,23 @@ h2, h3, h4, h5, H6 {
   border-style: dashed;
   border-radius: 5px;
   text-align: center;
-  margin-top: 20px;
-  margin-bottom: 20px;
   background-color: white;
   box-sizing: border-box;
 }
 
-#upload-label {
-  line-height: 60px;
-  width: 40%;
+#left-panel {
+  box-sizing: border-box;
+  width: 600px;
+  /* display: inline-block; */
   float: left;
-  display: inline-block;
-  margin: 5px 0 5px 0;
-  vertical-align: middle;
-  font-weight: bold;
 }
 
-#dash-bio-container {
-  box-sizing: content-box;
-  width: 600px;
-  margin: 10px;
-  display: inline-block;
+#right-panel {
+  box-sizing: border-box;
   float: left;
+  margin-left: 4%;
+  /* display: inline-block; */
+  width: calc(96% - 600px);
 }
 
 #dash-bio-viewer {
@@ -152,74 +138,13 @@ h2, h3, h4, h5, H6 {
 #molecule-viewer > .molecule-3d,
 #molecule-viewer > .molecule-3d > canvas {
   width: 600px !important;
-  height: 600px !important; 
-}
-
-#data-table-container {
-  /* width: 50%; */
-  box-sizing: border-box;
-  padding: 10px;
-  width: calc(100% - 620px);
-  display: inline-block;
-}
-
-.control-panel {
-  /* margin-top: 30px; */
-  margin-bottom: 10px;
-  color: rgb(60, 99, 130);
-  background-color: rgba(60, 99, 130, 0.075);
-  padding: 0 20px 10px 20px;
-  border-top: solid rgb(60, 99, 130) 4px;
-  min-height: 260px;
+  height: 600px !important;
+  /* border: solid 2px rgb(60, 99, 130); */
 }
 
 .control-label {
-  width: 40%;
-  line-height: 30px;
-  float: left;
-  display: inline-block;
-  margin: 5px 0 5px 0;
-  /* vertical-align: middle; */
+  color: rgb(60, 99, 130);
   font-weight: bold;
-}
-
-.control {
-  margin: auto;
-  margin: 5px 0 5px 0;
-  width: 60%;
-  display: inline-block;
-}
-
-#cm-max-value, #cm-min-value {
-  width: 48%;
-  display: inline-block;
-}
-
-#cm-min-value {
-  margin-right: 4%;
-}
-
-#data-column-selector {
-  margin: 10px 0 10px 0;
-  /* min-height: 150px; */
-}
-
-.column-selector-label {
-  margin: 10px 0 10px 0;
-  font-weight: bold;
-}
-
-.checklist-label {
-  width: 33%;
-  display: inline-block;
-  margin-top: 5px;
-  font-size: 1.6rem;
-  padding: 0 5px 0 5px;
-  box-sizing: border-box;  
-}
-
-.checklist-item {
-  margin-right: 5px;
 }
 
 #download {
@@ -261,7 +186,7 @@ h2, h3, h4, h5, H6 {
   margin-top: 1.8rem;
   font-size: 1.8rem;
   /* letter-spacing: 0.05rem; */
-  font-weight: bold;
+  /* font-weight: bold; */
   color: gray;
   margin-bottom: 0.5rem;
 }
@@ -272,10 +197,4 @@ h2, h3, h4, h5, H6 {
   border: solid rgb(240, 240, 240) 2px;
 }
 
-.clearfix {
-  border-top: 2px rgb(60, 99, 130) solid;
-  clear: both;
-  display: block;
-  content: "";
-  margin: 0;
-}
+

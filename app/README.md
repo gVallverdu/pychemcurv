@@ -6,7 +6,9 @@ the chemical structure of your system.
 
 The application is available at this address: https://pychemapps.univ-pau.fr/mosaica/
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/q7UO5Gou-lw" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+Demo video:
+
+[![youtube demo video](https://img.youtube.com/vi/q7UO5Gou-lw/0.jpg)](https://www.youtube.com/watch?v=q7UO5Gou-lw)
 
 ## Run the application locally
 

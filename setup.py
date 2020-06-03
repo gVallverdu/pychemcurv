@@ -5,7 +5,7 @@ import setuptools
 __author__ = "Germain Salvato-Vallverdu"
 __copyright__ = "University of Pau and Pays Adour"
 __email__ = "germain.vallverdu@univ-pau.fr"
-__version__ = "2020.4.22"
+__version__ = "2020.6.3"
 
 with open("README.rst", "r") as fh:
     long_description = fh.read()

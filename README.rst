@@ -32,9 +32,9 @@ analyzes on molecules or materials. The web application is available at
 The webapps allows to upload simple xyz files and compute the local geometrical
 properties and the hybridization properties.
 
-Some jupyter notebooks are provided in the ``notebooks/`` folder and present use case 
-of the classes implemented in this package. You can access to this notebooks
-online with `binder <https://mybinder.org/v2/gh/gVallverdu/pychemcurv.git/master>`_.
+Some jupyter notebooks are provided in the ``notebooks/`` folder and present use cases
+of the classes implemented in this package. You can access to these notebooks
+online with `binder <https://mybinder.org/v2/gh/gVallverdu/pychemcurv.git/2020.6.3>`_.
 
 
 Citing pychemcurv

@@ -46,8 +46,6 @@ the Pyramidalization Angle*, *Under review*
 
 `link to the preprint on HAL <https://hal.archives-ouvertes.fr/hal-02490358/document>`_.
 
-
-
 Installation
 ============
 
@@ -134,10 +132,6 @@ In order to install in developper mode, first create an environment
 
 If you want to build the documentation you also need to install sphinx.
     
-::
-
-    pip install git+git://github.com/gVallverdu/pychemcurv.git
-
 
 Licence and contact
 ===================

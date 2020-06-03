@@ -7,7 +7,7 @@ pychemcurv
     :alt: Documentation Status
 
 .. image:: https://mybinder.org/badge_logo.svg
-    :target: https://mybinder.org/v2/gh/gVallverdu/pychemcurv.git/master
+    :target: https://mybinder.org/v2/gh/gVallverdu/pychemcurv.git/2020.6.3
     :alt: binder notebooks
 
 * `installation <#installation>`_

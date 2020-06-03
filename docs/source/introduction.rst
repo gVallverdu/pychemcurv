@@ -37,12 +37,12 @@ The web application is available at
 The webapps allows to upload simple xyz files and compute the local geometrical
 properties and the hybridization properties.
 
-Some jupyter notebooks are provided in the ``notebooks/`` folder and present use case 
-of the classes implemented in this package. You can access to this notebooks
+Some jupyter notebooks are provided in the ``notebooks/`` folder and present use cases 
+of the classes implemented in this package. You can access to these notebooks
 online with `binder <https://mybinder.org/>`_.
 
 .. image:: https://mybinder.org/badge_logo.svg
-    :target: https://mybinder.org/v2/gh/gVallverdu/pychemcurv.git/master
+    :target: https://mybinder.org/v2/gh/gVallverdu/pychemcurv.git/2020.6.3
     :alt: binder notebooks
 
 Citing pychemcurv

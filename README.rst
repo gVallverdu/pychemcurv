@@ -6,6 +6,10 @@ pychemcurv
     :target: https://pychemcurv.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
+.. image:: https://mybinder.org/badge_logo.svg
+    :target: https://mybinder.org/v2/gh/gVallverdu/pychemcurv.git/master
+    :alt: binder notebooks
+
 * `installation <#installation>`_
 * `documentation <https://pychemcurv.readthedocs.io/>`_
 * Dash web application `https://pychemapps.univ-pau.fr/mosaica <https://pychemapps.univ-pau.fr/mosaica/>`_.
@@ -18,7 +22,7 @@ local curvature is then used to compute the hybridization of molecular orbitals.
 Features
 ========
 
-Pychemcurv is divided in two parts. The first one is a standard python packages
+Pychemcurv is divided in two parts. The first one is a standard python package
 which provides two main classes to compute the local curvature at the atomic
 scale and the hybridization of a given atom. Second, a 
 `Plotly/Dash <https://plot.ly/dash/>`_ web
@@ -28,49 +32,9 @@ analyzes on molecules or materials. The web application is available at
 The webapps allows to upload simple xyz files and compute the local geometrical
 properties and the hybridization properties.
 
-The web-application relies on the core classes of pychemcurv. Several jupyter
-notebooks are also provided as examples.
-
-Installation
-============
-
-Before installing pychemcurv it is recommanded to create a virtual environment 
-dedicated using conda or virtuelenv.
-
-Then using pip directly from github, run
-
-::
-
-    pip install git+git://github.com/gVallverdu/pychemcurv.git
-
-
-Alternatively, or if you want to install it in developper mode, 
-you have to clone the pychemcurv repository
-
-:: 
-
-    git clone https://github.com/gVallverdu/pychemcurv.git
-
-and then install the module and its dependencies in developper mode
-
-::
-
-    pip install -e .
-
-
-In order to run the web-application locally you also need Dash and plotly. 
-You can build a specific environment from ``requirements.txt`` file or 
-``environment.yml`` using conda.
-
-::
-
-    pip install -r requirements.txt
-
-or using ``conda``
-
-::
-
-    conda env create -f environment.yml
+Some jupyter notebooks are provided in the ``notebooks/`` folder and present use case 
+of the classes implemented in this package. You can access to this notebooks
+online with `binder <https://mybinder.org/v2/gh/gVallverdu/pychemcurv.git/master>`_.
 
 
 Citing pychemcurv
@@ -83,6 +47,98 @@ the Pyramidalization Angle*, *Under review*
 `link to the preprint on HAL <https://hal.archives-ouvertes.fr/hal-02490358/document>`_.
 
 
+
+Installation
+============
+
+Before installing pychemcurv it is recommanded to create a virtual environment 
+using conda or virtuelenv.
+
+Short installation
+------------------
+
+Using pip directly from github, run
+
+::
+
+    pip install git+git://github.com/gVallverdu/pychemcurv.git
+
+
+Alternatively, you can first clone the pychemcurv repository
+
+:: 
+
+    git clone https://github.com/gVallverdu/pychemcurv.git
+
+and then install the module and its dependencies using
+
+::
+
+    pip install .
+
+
+
+Full installation
+-----------------
+
+If you want to use the web application locally or if you want to use
+`nglview <https://github.com/arose/nglview>`_ to display structures in 
+jupyter notebooks you need to install more dependencies. The setup configuration
+provides the ``viz`` and ``app`` extras so, using pip, run one of
+
+:: 
+
+    pip install .[app]
+    # or
+    pip install .[viz]
+    # or all extras
+    pip install .[app, viz]
+
+    # escape square bracket with zsh
+    pip install .\[app, viz\]
+
+If you have installed nglview you have to enable the jupyter extension
+
+::
+
+    jupyter-nbextension enable nglview --py --sys-prefix
+
+
+The files ``requirements.txt`` and ``environment.yml`` are provided to setup
+a full environment with all dependencies.
+
+::
+
+    pip install -r requirements.txt
+
+or using ``conda``
+
+::
+
+    conda env create -f environment.yml
+
+
+Do not forget to enable the jupyter nglview extension (see above).
+
+
+Install in developper mode
+--------------------------
+
+In order to install in developper mode, first create an environment
+(using one of the provided file for example) and then install using pip
+
+::
+
+    pip install -e .[app, viz]
+
+
+If you want to build the documentation you also need to install sphinx.
+    
+::
+
+    pip install git+git://github.com/gVallverdu/pychemcurv.git
+
+
 Licence and contact
 ===================
 
@@ -90,7 +146,8 @@ This software was developped at the `Université de Pau et des Pays de l'Adour
 (UPPA) <http://www.univ-pau.fr>`_ in the `Institut des Sciences Analytiques et
 de Physico-Chimie pour l'Environement et les Matériaux (IPREM)
 <http://iprem.univ-pau.fr/>`_ and the `Institut Pluridisciplinaire de Recherches
-Appliquées (IPRA) <http://ipra.univ-pau.fr/>`_.
+Appliquées (IPRA) <http://ipra.univ-pau.fr/>`_ and is distributed under the 
+`MIT licence <https://opensource.org/licenses/MIT>`_.
 
 
 Authors

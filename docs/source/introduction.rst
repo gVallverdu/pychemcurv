@@ -26,14 +26,24 @@ properties and the hybridization properties.
 Features
 ========
 
-Pychemcurv is divided in two parts. The first one is a standard python packages 
+Pychemcurv is divided in two parts. The first one is a standard python package 
 which provides two main classes to compute the local curvature at the atomic 
-scale and the hybridization of a given atom. Second, a plotly-Dash web 
-application is provided in order to perform a visualization of the structural 
+scale and the hybridization of a given atom. Second, a `Plotly/Dash <https://plot.ly/dash/>`_ web 
+application is provided in order to perform a geometrical and electronic
 analyzes on molecules or materials.
 
-The web-application relies on the core classes of pychemcurv. Several jupyter 
-notebooks are also provided as examples.
+The web application is available at
+`pychemapps.univ-pau.fr/mosica <https://pychemapps.univ-pau.fr/mosaica/>`_.
+The webapps allows to upload simple xyz files and compute the local geometrical
+properties and the hybridization properties.
+
+Some jupyter notebooks are provided in the ``notebooks/`` folder and present use case 
+of the classes implemented in this package. You can access to this notebooks
+online with `binder <https://mybinder.org/>`_.
+
+.. image:: https://mybinder.org/badge_logo.svg
+    :target: https://mybinder.org/v2/gh/gVallverdu/pychemcurv.git/master
+    :alt: binder notebooks
 
 Citing pychemcurv
 =================

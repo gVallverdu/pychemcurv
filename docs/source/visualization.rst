@@ -15,4 +15,3 @@ CurvatureViewer class
 
 .. autoclass:: pychemcurv.vis.CurvatureViewer
     :members:
-

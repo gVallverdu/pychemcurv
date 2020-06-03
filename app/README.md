@@ -44,7 +44,7 @@ This will output something like this. Open the url to use the application.
     Use a production WSGI server instead.
     * Debug mode: on
 
-You can swith off the debug mode by setting `debug=False` on the last line of 
+You can switch off the debug mode by setting `debug=False` on the last line of 
 the `app.py` file.
 
 ## TODO

@@ -4,6 +4,24 @@
 This module implements the `CurvatureViewer` class in order to visualize a
 molecule or a periodic structure in a jupyter notebook and map a given 
 properties on the atoms using a color scale.
+
+This class needs, `nglview <https://github.com/arose/nglview>`_ and uses
+ipywidgets in a jupyter notebook to display the visualization. Run the 
+following instructions to isntall and be able to use nglview in a jupyter
+notebook
+
+::
+
+    conda install nglview -c conda-forge
+    jupyter-nbextension enable nglview --py --sys-prefix
+
+or
+
+::
+
+    pip install nglview
+    jupyter-nbextension enable nglview --py --sys-prefix
+
 """
 
 __author__ = "Germain Salvato-Vallverdu"
@@ -16,16 +34,9 @@ __all__ = ["CurvatureViewer"]
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from ipywidgets import HBox, VBox, Output
 
 from pymatgen import Molecule, Structure
 from .analysis import CurvatureAnalyzer
-
-try:
-    import nglview as nv
-except ImportError as e:
-    print("You need to install ase and nglview to perform visualization.")
-    print(e)
 
 
 class CurvatureViewer:
@@ -59,7 +70,7 @@ class CurvatureViewer:
             structure, bond_tol, rcut, bond_order).data
 
     def get_view(self, representation="ball+stick", radius=0.25, aspect_ratio=2,
-                 width="700px", height="500px"):
+                 unitcell=False, width="700px", height="500px"):
         """ Set up a simple NGLView widget with the ball and stick or
         licorice representation of the structure.
 
@@ -67,12 +78,22 @@ class CurvatureViewer:
             representation (str): representation: 'ball+stick' or 'licorice'
             radius (float): bond (stick) radius
             aspect_ratio (float): ratio between the balls and stick radiuses
+            unitcell (bool): If True and structure is periodic, show the unitcell.
             width (str): width of the nglview widget, default '700px'
             height (str): height of the nglview widget, default '500px'
 
         Returns:
             Return a ``NGLWidget`` object
         """
+
+        # try to import nglview
+        try:
+            import nglview as nv
+        except ImportError as e:
+            print("WARNING: You need to install ase and nglview to perform "
+                "visualization.")
+            print(e)
+            return None
 
         if representation not in ["ball+stick", "licorice"]:
             print("Switch representation to 'ball+stick'")
@@ -85,14 +106,19 @@ class CurvatureViewer:
             radius=radius,
             aspect_ratio=aspect_ratio,
         )
+
+        # check unitcell
+        if isinstance(self.structure, Structure) and unitcell:
+            view.add_unitcell()
+
         # resize nglview widget
         view._remote_call("setSize", targe="Widget", args=[width, height])
 
         return view
 
-    def map_view(self, prop, radius=0.25, aspect_ratio=2, cm="viridis",
-                 minval=None, maxval=None, orientation="vertical", label=None,
-                 width="700px", height="500px"):
+    def map_view(self, prop, radius=0.25, aspect_ratio=2, unitcell=False, 
+                 cm="viridis", minval=None, maxval=None, orientation="vertical",
+                 label=None, width="700px", height="500px"):
         """ Map the given properties on a color scale on to the molecule using
         a ball and stick representations. The properties can be either the name
         of a column of the data computed using the CurvatureAnalyzer class, or, 
@@ -103,6 +129,7 @@ class CurvatureViewer:
             prop (str or array): name of the properties or values you want to map
             radius (float): bond (stick) radius
             aspect_ratio (float): ratio between the balls and stick radiuses
+            unitcell (bool): If True and structure is periodic, show the unitcell.
             cm (str): colormap from ``matplotlib.cm``.
             minval (float): minimum value to consider for the color sacle
             maxval (float): maximum value to consider for the color sacle
@@ -113,8 +140,18 @@ class CurvatureViewer:
 
         Returns:
             Returns an ipywidgets ``HBox`` or ``VBox`` with the ``NGLWidget``
-            and a color bar associated to the mapped properties.
+            and a color bar associated to the mapped properties. The 
+            ``NGLWidget`` is the first element of the children, the colorbar
+            is the second one.
         """
+
+        # try to import ipywidgets
+        try:
+            from ipywidgets import HBox, VBox, Output
+        except ImportError as e:
+            print("You need ipywidgets available with jupyter notebook.")
+            print(e)
+            return None
 
         # check property data
         if isinstance(prop, str) and prop in self.data.columns:
@@ -156,11 +193,12 @@ class CurvatureViewer:
         ax.set_title(label)
 
         # set up the visualization
-        view = nv.show_pymatgen(self.structure)
-        view.clear()
-        view.center()
-        view.add_representation("ball+stick", radius=radius,
-                                aspect_ratio=aspect_ratio)
+        view = self.get_view(representation="ball+stick", radius=radius, 
+                             aspect_ratio=aspect_ratio, unitcell=unitcell,
+                             width=width, height=height)
+
+        # resize nglview widget
+        view._remote_call("setSize", targe="Widget", args=[width, height])
 
         # set the atom colors
         for iat, val in enumerate(prop_vals):
@@ -168,7 +206,8 @@ class CurvatureViewer:
                 continue
             color = mpl.colors.rgb2hex(cmap(X=normalize(val), alpha=1))
             view.add_representation('ball+stick', selection=[iat], color=color,
-                                    radius=1.05 * radius)
+                                    radius=1.05 * radius, 
+                                    aspect_ratio=aspect_ratio)
 
         # resize nglview widget
         view._remote_call("setSize", targe="Widget", args=[width, height])

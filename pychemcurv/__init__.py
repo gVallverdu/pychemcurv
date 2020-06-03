@@ -14,3 +14,4 @@ __email__ = "germain.vallverdu@univ-pau.fr"
 
 from .core import VertexAtom, Hybridization
 from .analysis import CurvatureAnalyzer
+from .vis import CurvatureViewer

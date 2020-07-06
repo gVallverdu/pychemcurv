@@ -269,35 +269,8 @@ class VertexAtom:
         if self._star_a.shape[0] < 3:
             return np.nan
 
-        # get P the plane of *(A)
-        vecx, vecy, _ = get_plane(self.reg_star_a)
-
-        # compute all angles with vecx in order to sort atoms of *(A)
-        com = center_of_mass(self.reg_star_a)
-        u = self.reg_star_a - com
-        norm = np.linalg.norm(u, axis=1)
-        u /= norm[:, np.newaxis]
-        cos = np.dot(u, vecx)
-        angles = np.where(np.dot(u, vecy) > 0,
-                          np.arccos(cos),
-                          2 * np.pi - np.arccos(cos))
-
-        # sort points according to angles
-        idx = np.arange(angles.size)
-        idx = idx[np.argsort(angles)]
-        idx = np.append(idx, idx[0])
-
-        # compute curvature
-        ang_defect = 2 * np.pi
-        for i, j in np.column_stack([idx[:-1], idx[1:]]):
-            u = self.reg_star_a[i, :] - self._a
-            u /= np.linalg.norm(u)
-
-            v = self.reg_star_a[j, :] - self._a
-            v /= np.linalg.norm(v)
-
-            cos = np.dot(u, v)
-            ang_defect -= np.arccos(cos)
+        angles = self.get_angles(radians=True)
+        ang_defect = 2 * np.pi - sum(angles.values())
 
         return ang_defect
 
@@ -329,6 +302,78 @@ class VertexAtom:
             kappa = 1 / np.sqrt(l**2 + (OA**2 - l**2)**2 / (4 * z_A**2))
 
         return kappa
+
+    def get_angles(self, radians=True):
+        r"""
+        Compute angles theta_ij between the bonds ABi and ABj, atoms Bi and
+        Bj belonging to :math:`\star(A)`. The angle theta_ij is made by the 
+        vectors ABi and ABj in the affine plane defeind by this two vectors and 
+        atom A. The computed angles are such as bond ABi are consecutive.
+
+        Args:
+            radians (bool): if True (default) angles are returned in radians
+        """
+
+        # check
+        if self._star_a.shape[0] < 2:
+            raise ValueError("I need at least three atom to compute an angle.")
+
+        elif self._star_a.shape[0] == 2:
+            u = self.reg_star_a[0, :] - self._a
+            v = self.reg_star_a[1, :] - self._a
+
+            cos = np.dot(u, v)
+            if radians:
+                angles = {(0, 1): np.arccos(cos)}
+            else:
+                angles = {(0, 1): np.degrees(np.arccos(cos))}
+
+        elif self._star_a.shape[0] == 2:
+            angles = dict()
+            for i, j in [(0, 1), (0, 2), (1, 2)]:
+                u = self.reg_star_a[i, :] - self._a
+                v = self.reg_star_a[j, :] - self._a
+
+                cos = np.dot(u, v)
+                if radians:
+                    angles[(i, j)] = np.arccos(cos)
+                else:
+                    angles[(i, j)] = np.degrees(np.arccos(cos))
+
+        else:
+            # get P the plane of *(A)
+            vecx, vecy, _ = get_plane(self.reg_star_a)
+
+            # compute all angles with vecx in order to sort atoms of *(A)
+            com = center_of_mass(self.reg_star_a)
+            u = self.reg_star_a - com
+            norm = np.linalg.norm(u, axis=1)
+            u /= norm[:, np.newaxis]
+            cos = np.dot(u, vecx)
+            angles = np.where(np.dot(u, vecy) > 0, np.arccos(cos),
+                              2 * np.pi - np.arccos(cos))
+
+            # sort points according to angles
+            idx = np.arange(angles.size)
+            idx = idx[np.argsort(angles)]
+            idx = np.append(idx, idx[0])
+
+            # compute curvature
+            angles = dict()
+            for i, j in np.column_stack([idx[:-1], idx[1:]]):
+                u = self.reg_star_a[i, :] - self._a
+                u /= np.linalg.norm(u)
+
+                v = self.reg_star_a[j, :] - self._a
+                v /= np.linalg.norm(v)
+
+                cos = np.dot(u, v)
+                if radians:
+                    angles[(i, j)] = np.arccos(cos)
+                else:
+                    angles[(i, j)] = np.degrees(np.arccos(cos))
+
+        return angles
 
     def as_dict(self, radians=True):
         """ 

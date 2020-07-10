@@ -10,6 +10,11 @@ pychemcurv
     :target: https://mybinder.org/v2/gh/gVallverdu/pychemcurv.git/2020.6.3
     :alt: binder notebooks
 
+.. image:: https://img.shields.io/badge/DOI-doi.org%2F10.1063%2F5.0008368-blue
+    :target: https://aip.scitation.org/doi/10.1063/5.0008368
+    :alt: DOI
+
+
 * `installation <#installation>`_
 * `documentation <https://pychemcurv.readthedocs.io/>`_
 * Dash web application `https://pychemapps.univ-pau.fr/mosaica <https://pychemapps.univ-pau.fr/mosaica/>`_.
@@ -40,11 +45,13 @@ online with `binder <https://mybinder.org/v2/gh/gVallverdu/pychemcurv.git/2020.6
 Citing pychemcurv
 =================
 
-Julia Sabalot-Cuzzubbo, Germain Vallverdu, Jacky Cresson and Didier Bégué,
-*Relating the shape of a molecule and its reactivity - Haddon's Curvature and
-the Pyramidalization Angle*, *Under review*
+Julia Sabalot-Cuzzubbo, Germain Salvato Vallverdu, Didier Bégué and Jacky Cresson
+*Relating the molecular topology and local geometry: Haddon’s pyramidalization angle and the Gaussian curvature*, 
+J. Chem. Phys. **152**, 244310 (2020).
 
-`link to the preprint on HAL <https://hal.archives-ouvertes.fr/hal-02490358/document>`_.
+.. image:: https://img.shields.io/badge/DOI-doi.org%2F10.1063%2F5.0008368-blue
+    :target: https://aip.scitation.org/doi/10.1063/5.0008368
+    :alt: DOI
 
 Installation
 ============

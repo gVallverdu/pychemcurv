@@ -26,7 +26,7 @@ setuptools.setup(
 
     # requirements
     install_requires=[
-        "numpy", "pandas", "pymatgen", "matplotlib",
+        "numpy", "pandas", "pymatgen", "matplotlib", "scipy",
     ],
     # extra requirements
     extras_require={

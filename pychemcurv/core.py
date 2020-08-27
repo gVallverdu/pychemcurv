@@ -1,26 +1,38 @@
 # coding: utf-8
 
 """
-This module implements the `VertexAtom` and `Hybridization` classes in order
-to compute the local curvature and the hybridation, respectively.
+Module ``pychemcur.core`` implements several classes in order to represents a vertex of 
+a molecular squeleton and compute geometrical and chemical indicators related
+to the local curvature around this vertex.
+
+A complete and precise definition of all the quantities computed in the 
+classes of this module can be found in article [JCP2020]_.
+
+.. [JCP2020] Julia Sabalot-Cuzzubbo, Germain Salvato Vallverdu, Didier Bégué 
+    and Jacky Cresson *Relating the molecular topology and local geometry: 
+    Haddon’s pyramidalization angle and the Gaussian curvature*, J. Chem. Phys. 
+    **152**, 244310 (2020). https://aip.scitation.org/doi/10.1063/5.0008368
+
+.. [POAV2] Julia Sabalot-Cuzzubbo, Germain Salvato Vallverdu, Didier Bégué 
+    and Jacky Cresson *Haddon's POAV2 versus POAV theory for non planar 
+    molecules* (to be published).
 """
 
 import numpy as np
+import scipy as sp
 from .geometry import get_plane, circum_center, center_of_mass
 
 __author__ = "Germain Salvato Vallverdu"
 __copyright__ = "University of Pau and Pays Adour"
 __email__ = "germain.vallverdu@univ-pau.fr"
 
-__all__ = ["VertexAtom", "Hybridization"]
+__all__ = ["VertexAtom", "TrivalentVertex", "POAV1", "POAV2"]
 
 
 class VertexAtom:
     r"""
-    This object represents an atom (or a point) associated to a vertex of the
-    squeleton of a molecule. Hereafter are reminded some definitions. To a 
-    complete overview, take a read at the following publications J Phys Chem ...
-
+    This class represents an atom (or a point) associated to a vertex of the
+    squeleton of a molecule. The used notations are the following. 
     We denote by A a given atom caracterized by its cartesian coordinates 
     corresponding to a vector in :math:`\mathbb{R}^3`. This atom A is bonded to
     one or several atoms B. The atoms B, bonded to atoms A belong to 
@@ -31,14 +43,282 @@ class VertexAtom:
     This class is defined from the cartesian coordinates of atom A and the atoms
     belonging to :math:`\star(A)`.
 
-    More generally, the classes only considers points in :math:`\mathbb{R}^3`
-    corresponding to the cartesian coordinates of the atoms.
-    In consequence, the class can be used for all cases
-    where a set of point in :math:`\mathbb{R}^3` is relevant.
+    More generally, the classes only considers points in :math:`\mathbb{R}^3`.
+    The is not any chemical consideration here. In consequence, the class can be
+    used for all cases where a set of point in :math:`\mathbb{R}^3` is relevant.
+    """
 
-    The following quantities are computed. For a complete definition, please
-    read the reference cited above (JPC 2020). All the quantities need that 
-    there are at least 3 atoms in :math:`\star(A)`.
+    def __init__(self, a, star_a):
+        r"""
+        Args:
+            a (np.ndarray): cartesian coordinates of point/atom A in :math:`\mathbb{R}^3`
+            star_a (nd.array): (N x 3) cartesian coordinates of points/atoms B in :math:`\star(A)`
+        """
+        # check point/atom A
+        try:
+            self._a = np.array(a, dtype=np.float64).reshape(3)
+        except ValueError:
+            print("a = ", a)
+            raise ValueError("Cannot convert a in a numpy array of floats.")
+
+        # check points/atoms B in *(A)
+        try:
+            self._star_a = np.array(star_a, dtype=np.float64)
+            self._star_a = self._star_a.reshape(self._star_a.size // 3, 3)
+        except ValueError:
+            print("*A, star_a = ", star_a)
+            raise ValueError("Cannot convert star_a in a numpy array of floats"
+                             " with a shape (N, 3).")
+
+        if self._star_a.shape[0] < 3:
+            print("*A, star_a = ", star_a)
+            raise ValueError("The shape of *(A) is not relevant. Needs at least"
+                             " 3 points/atoms in *(A)")
+
+        # compute the regularized coordinates of atoms/points B in *(A)
+        u = self._star_a - self._a
+        self._distances = np.linalg.norm(u, axis=1)
+        u /= self._distances[:, np.newaxis]
+        self._reg_star_a = self._a + u
+
+        # center of mass of atoms/points B in *(A)
+        self._com = center_of_mass(self._star_a)
+
+        # compute a normal vector of *(A)
+        _, _, self._normal = get_plane(self._star_a)
+
+        # compute a normal vector of the plane Reg *(A) using the regularized
+        # coordinates of atoms/points B in *(A)
+        _, _, self._reg_normal = get_plane(self._reg_star_a)
+
+        # make the direction IA and the normal vectors of *(A) or Reg *(A) the same
+        # I is the center of mass of *(A)
+        IA = self.a - self.com
+        if np.dot(IA, self._normal) < 0:
+            self._normal = -self._normal
+        if np.dot(IA, self.reg_normal) < 0:
+            self._reg_normal = -self.reg_normal
+
+    @staticmethod
+    def from_pyramid(length, theta, n_star_A=3, radians=False, perturb=None):
+        r"""Set up a VertexAtom from an ideal pyramidal structure.
+        Build an ideal pyramidal geometry given the angle theta and randomize
+        the positions by adding a noise of a given magnitude. The vertex of the 
+        pyramid is the point A and :math:`\star(A)`. are the points linked to 
+        the vertex. The size of :math:`\star(A)`. is at least 3.
+
+        :math:`\theta` is the angle between the normal vector of the plane defined
+        from :math:`\star(A)` and the bonds between A and :math:`\star(A)`. 
+        The pyramidalisation angle is defined from :math:`\theta` such as
+
+        .. math::
+
+            pyrA = \theta - \frac{\pi}{2}
+
+        Args:
+            length (float): the bond length
+            theta (float): Angle to define the pyramid
+            n_star_A (int): number of point bonded to A the vertex of the pyramid.
+            radian (bool): True if theta is in radian (default False)
+            perturb (float): Give the width of a normal distribution from which
+                random numbers are choosen and added to the coordinates.
+
+        Returns:
+            A VertexAtom instance
+        """
+        r_theta = theta if radians else np.radians(theta)
+        if n_star_A < 3:
+            raise ValueError(
+                "n_star_A = {} and must be greater than 3.".format(n_star_A))
+
+        # build an ideal pyramid
+        IB = length * np.sin(r_theta)
+        step_angle = 2 * np.pi / n_star_A
+        coords = [[0, 0, -length * np.cos(r_theta)]]
+        coords += [[IB * np.cos(iat * step_angle),
+                    IB * np.sin(iat * step_angle),
+                    0] for iat in range(n_star_A)]
+        coords = np.array(coords, dtype=np.float)
+
+        # randomize positions
+        if perturb:
+            coords[1:, :] += np.random.normal(0, perturb, size=(n_star_A, 3))
+
+        return VertexAtom(coords[0], coords[1:])
+
+    @property
+    def a(self):
+        """ Coordinates of atom A """
+        return self._a
+
+    @property
+    def star_a(self):
+        r""" Coordinates of atoms B belonging to :math:`\star(A)` """
+        return self._star_a
+
+    @property
+    def reg_star_a(self):
+        r"""
+        Regularized coordinates of atoms/points B in :math:`\star(A)` such as all 
+        distances between A and points B are equal to unity. This corresponds to 
+        :math:`Reg_{\epsilon}\star(A)` with :math:`\epsilon` = 1.
+        """
+        return self._reg_star_a
+
+    @property
+    def normal(self):
+        r"""
+        Unitary vector normal to the plane or the best fitting plane of
+        atoms/points Bi in :math:`\star(A)`.
+        """
+        return self._normal
+
+    @property
+    def reg_normal(self):
+        r"""
+        Unitary vector normal to the plane or the best fitting plane of
+        atoms/points :math:`Reg B_i` in :math:`\star(A)`.
+        """
+        return self._reg_normal
+
+    @property
+    def com(self):
+        r""" Center of mass of atoms/points B in :math:`\star(A)` """
+        return self._com
+
+    @property
+    def distances(self):
+        r"""
+        Return all distances between atom A and atoms B belonging to 
+        :math:`\star(A)`. Distances are in the same order as the atoms in 
+        ``vertex.star_a``.
+        """
+        return self._distances
+
+    def get_angles(self, radians=True):
+        r"""
+        Compute angles theta_ij between the bonds ABi and ABj, atoms Bi and
+        Bj belonging to :math:`\star(A)`. The angle theta_ij is made by the 
+        vectors ABi and ABj in the affine plane defined by this two vectors and 
+        atom A. The computed angles are such as bond ABi are in a consecutive
+        order.
+
+        Args:
+            radians (bool): if True (default) angles are returned in radians
+        """
+        if self._star_a.shape[0] == 3:
+            angles = dict()
+            for i, j in [(0, 1), (0, 2), (1, 2)]:
+                u = self.reg_star_a[i, :] - self._a
+                v = self.reg_star_a[j, :] - self._a
+
+                cos = np.dot(u, v)
+                if radians:
+                    angles[(i, j)] = np.arccos(cos)
+                else:
+                    angles[(i, j)] = np.degrees(np.arccos(cos))
+
+        else:
+            # get P the plane of *(A)
+            vecx, vecy, _ = get_plane(self.reg_star_a)
+
+            # compute all angles with vecx in order to sort atoms of *(A)
+            com = center_of_mass(self.reg_star_a)
+            u = self.reg_star_a - com
+            norm = np.linalg.norm(u, axis=1)
+            u /= norm[:, np.newaxis]
+            cos = np.dot(u, vecx)
+            angles = np.where(np.dot(u, vecy) > 0, np.arccos(cos),
+                              2 * np.pi - np.arccos(cos))
+
+            # sort points according to angles
+            idx = np.arange(angles.size)
+            idx = idx[np.argsort(angles)]
+            idx = np.append(idx, idx[0])
+
+            # compute curvature
+            angles = dict()
+            for i, j in np.column_stack([idx[:-1], idx[1:]]):
+                u = self.reg_star_a[i, :] - self._a
+                u /= np.linalg.norm(u)
+
+                v = self.reg_star_a[j, :] - self._a
+                v /= np.linalg.norm(v)
+
+                cos = np.dot(u, v)
+                if radians:
+                    angles[(i, j)] = np.arccos(cos)
+                else:
+                    angles[(i, j)] = np.degrees(np.arccos(cos))
+
+        return angles
+
+    @property
+    def angular_defect(self):
+        r"""
+        Compute the angular defect as a measure of the discrete curvature around 
+        the vertex, point A.
+
+        The calculation first looks for the best fitting plane of points 
+        belonging to :math:`\star(A)` and sorts that points in order to compute 
+        the angles between the edges connected to the vertex (A).
+        """
+        angles = self.get_angles(radians=True)
+        ang_defect = 2 * np.pi - sum(angles.values())
+
+        return ang_defect
+
+    @property
+    def pyr_distance(self):
+        r"""
+        Compute the distance of atom A to the plane define by :math:`\star(A)` or
+        the best fitting plane of :math:`\star(A)`. The unit of the distance is the
+        same as the unit of the coordinates of A and :math:`\star(A)`.
+        """
+        return np.abs(np.dot(self._a - self.com, self.normal))
+
+    def as_dict(self, radians=True):
+        """ 
+        Return a dict version of all the properties that can be computed using
+        this class.
+
+        Args:
+            radians (bool): if True, angles are returned in radians (default)
+        """
+        data = {
+            "atom_A": self.a,
+            "star_A": self.star_a,
+            "reg_star_A": self.reg_star_a,
+            "distances": self.distances,
+            "angles": self.get_angles(radians=radians),
+            "n_star_A": len(self.star_a),
+            "angular_defect": self.angular_defect if radians else np.degrees(self.angular_defect),
+            "pyr_distance": self.pyr_distance,
+        }
+        return data
+
+
+class TrivalentVertex(VertexAtom):
+    r"""
+    This object represents an atom (or a point) associated to a vertex of the
+    squeleton of a molecule bonded to exactly 3 other atoms (or linked to 3 
+    other points). This correspond to the trivalent case.
+
+    We denote by A a given atom caracterized by its cartesian coordinates 
+    corresponding to a vector in :math:`\mathbb{R}^3`. This atom A is bonded to
+    3 atoms B. The atoms B, bonded to atom A belong to 
+    :math:`\star(A)` and are caracterized by their cartesian coordinates defined
+    as vectors in :math:`\mathbb{R}^3`. The geometrical
+    object obtained by drawing a segment between bonded atoms is called the
+    skeleton of the molecule and is the initial geometrical picture for a molecule.
+    This class is defined from the cartesian coordinates of atom A and the atoms
+    belonging to :math:`\star(A)`.
+
+    More generally, the classes only considers points in :math:`\mathbb{R}^3`.
+    The is not any chemical consideration here. In consequence, the class can be
+    used for all cases where a set of point in :math:`\mathbb{R}^3` is relevant.
+
+    The following quantities are computed according the reference [JCP2020]_
 
     pyramidalization angle ``pyrA``
         The pyramidalization angle, **in degrees**. :math:`pyrA = \theta - \pi/2`
@@ -111,46 +391,45 @@ class VertexAtom:
     def __init__(self, a, star_a):
         r"""
         Args:
-            a (np.ndarray): cartesian coordinates of atom A in :math:`\mathbb{R}^3`
-            star_a (nd.array): (N x 3) cartesian coordinates of atoms B in :math:`\star(A)`
+            a (np.ndarray): cartesian coordinates of point/atom A in :math:`\mathbb{R}^3`
+            star_a (nd.array): (N x 3) cartesian coordinates of points/atoms B in :math:`\star(A)`
         """
-        try:
-            self._a = np.array(a, dtype=np.float64).reshape(3)
-        except ValueError:
-            print("a = ", a)
-            raise ValueError("Cannot convert a in a numpy array of floats.")
+        super().__init__(a, star_a)
 
-        try:
-            self._star_a = np.array(star_a, dtype=np.float64)
-            self._star_a = self._star_a.reshape(self._star_a.size // 3, 3)
-        except ValueError:
-            print("*A, star_a = ", star_a)
-            raise ValueError("Cannot convert star_a in a numpy array of floats"
-                             " with a shape (N, 3).")
+        if self._star_a.shape[0] != 3:
+            raise ValueError("The number of atoms/points in *(A) must be 3."
+                             " star_a.shape is {}".format(self._star_a.shape))
 
-    @property
-    def a(self):
-        """ Coordinates of atom A """
-        return self._a
+    @staticmethod
+    def from_pyramid(length, theta, radians=False, perturb=None):
+        r"""Set up a VertexAtom from an ideal pyramidal structure.
+        Build an ideal pyramidal geometry given the angle theta and randomize
+        the positions by adding a noise of a given magnitude. The vertex of the 
+        pyramid is the point A and :math:`\star(A)`. are the points linked to 
+        the vertex. The size of :math:`\star(A)`. is 3.
 
-    @property
-    def star_a(self):
-        r""" Coordinates of atoms B belonging to :math:`\star(A)` """
-        return self._star_a
+        :math:`\theta` is the angle between the normal vector of the plane defined
+        from :math:`\star(A)` and the bonds between A and :math:`\star(A)`. 
+        The pyramidalisation angle is defined from :math:`\theta` such as
 
-    @property
-    def reg_star_a(self):
-        r"""
-        Regularized coordinates of points B in :math:`\star(A)` such as all 
-        distances between A and points B are equal to unity. This corresponds to 
-        :math:`Reg_{\epsilon}\star(A)` with :math:`\epsilon` = 1.
+        .. math::
+
+            pyrA = \theta - \frac{\pi}{2}
+
+        Args:
+            length (float): the bond length
+            theta (float): Angle to define the pyramid
+            radian (bool): True if theta is in radian (default False)
+            perturb (float): Give the width of a normal distribution from which
+                random numbers are choosen and added to the coordinates.
+
+        Returns:
+            A TrivalentVertex instance
         """
-
-        u = self._star_a - self._a
-        norm = np.linalg.norm(u, axis=1)
-        u /= norm[:, np.newaxis]
-
-        return self._a + u
+        va = VertexAtom.from_pyramid(
+            length, theta, n_star_A=3, radians=radians, perturb=perturb
+        )
+        return TrivalentVertex(a=va.a, star_a=va.star_a)
 
     @property
     def improper(self):
@@ -172,8 +451,6 @@ class VertexAtom:
         """
 
         # improper angle is defined only in the case of 3 atoms in *(A)
-        if self._star_a.shape[0] != 3:
-            return np.nan
 
         # get coords
         icoords = self._a
@@ -200,52 +477,13 @@ class VertexAtom:
         return theta
 
     @property
-    def pyr_distance(self):
-        r"""
-        Compute the distance of atom A to the plane define by :math:`\star(A)` or
-        the best fitting plane of :math:`\star(A)`. The unit of the distance is the
-        same as the unit of the coordinates of A and :math:`\star(A)`.
-        """
-        # pyramidalization distance needs at least 3 atoms in *(A)
-        if self._star_a.shape[0] < 3:
-            return np.nan
-
-        # compute normal vector of *(A)
-        _, _, n_a = get_plane(self._star_a)
-        com = center_of_mass(self._star_a)
-
-        return np.abs(np.dot(self._a - com, n_a))
-
-    @property
-    def POAV(self):
-        r""" Return a normalized vector in :math:`\mathbb{R}^3` along the
-        POAV vector in the same frame as input coordinates. """
-
-        # check input coords
-        if self._star_a.shape[0] < 3:
-            return np.empty(3) * np.nan
-
-        # get the normal vector to the plane defined from *(A)
-        _, _, n_a = get_plane(self.reg_star_a)
-
-        # change the direction of n_a to be the same as IA.
-        IA = self._a - center_of_mass(self.reg_star_a)
-        n_a = -n_a if np.dot(IA, n_a) < 0 else n_a
-
-        return n_a
-
-    @property
     def pyrA_r(self):
         """ Return the pyramidalization angle in radians. """
-
-        # check input coords
-        if self._star_a.shape[0] < 3:
-            return np.nan
 
         # compute pyrA
         v = self.reg_star_a[0] - self._a
         v /= np.linalg.norm(v)
-        pyrA = np.arccos(np.dot(v, self.POAV)) - np.pi / 2
+        pyrA = np.arccos(np.dot(v, self.reg_normal)) - np.pi / 2
 
         return pyrA
 
@@ -255,26 +493,6 @@ class VertexAtom:
         return np.degrees(self.pyrA_r)
 
     @property
-    def angular_defect(self):
-        r"""
-        Compute the angular defect as a measure of the discrete curvature around 
-        the vertex, point A.
-
-        The calculation first looks for the best fitting plane of points 
-        belonging to :math:`\star(A)` and sorts that points in order to compute 
-        the angles between the edges connected to the vertex (A).
-        """
-
-        # check and regularize coords
-        if self._star_a.shape[0] < 3:
-            return np.nan
-
-        angles = self.get_angles(radians=True)
-        ang_defect = 2 * np.pi - sum(angles.values())
-
-        return ang_defect
-
-    @property
     def spherical_curvature(self):
         r"""
         Compute the spherical curvature associated to the osculating sphere of
@@ -282,17 +500,12 @@ class VertexAtom:
         Here, we assume that there is exactly 3 atoms B in :math:`\star(A)`.
         """
 
-        # check length of *(A)
-        if self._star_a.shape[0] != 3:
-            return np.nan
-
         # plane *(A)
         point_O = circum_center(self._star_a)
-        _, _, n_a = get_plane(self._star_a)
 
         # needed length
         l = np.linalg.norm(self._star_a[0] - point_O)
-        z_A = np.dot(self._a - point_O, n_a)
+        z_A = np.dot(self._a - point_O, self.normal)
         OA = np.linalg.norm(self._a - point_O)
 
         # spherical curvature
@@ -303,78 +516,6 @@ class VertexAtom:
 
         return kappa
 
-    def get_angles(self, radians=True):
-        r"""
-        Compute angles theta_ij between the bonds ABi and ABj, atoms Bi and
-        Bj belonging to :math:`\star(A)`. The angle theta_ij is made by the 
-        vectors ABi and ABj in the affine plane defeind by this two vectors and 
-        atom A. The computed angles are such as bond ABi are consecutive.
-
-        Args:
-            radians (bool): if True (default) angles are returned in radians
-        """
-
-        # check
-        if self._star_a.shape[0] < 2:
-            raise ValueError("I need at least three atom to compute an angle.")
-
-        elif self._star_a.shape[0] == 2:
-            u = self.reg_star_a[0, :] - self._a
-            v = self.reg_star_a[1, :] - self._a
-
-            cos = np.dot(u, v)
-            if radians:
-                angles = {(0, 1): np.arccos(cos)}
-            else:
-                angles = {(0, 1): np.degrees(np.arccos(cos))}
-
-        elif self._star_a.shape[0] == 2:
-            angles = dict()
-            for i, j in [(0, 1), (0, 2), (1, 2)]:
-                u = self.reg_star_a[i, :] - self._a
-                v = self.reg_star_a[j, :] - self._a
-
-                cos = np.dot(u, v)
-                if radians:
-                    angles[(i, j)] = np.arccos(cos)
-                else:
-                    angles[(i, j)] = np.degrees(np.arccos(cos))
-
-        else:
-            # get P the plane of *(A)
-            vecx, vecy, _ = get_plane(self.reg_star_a)
-
-            # compute all angles with vecx in order to sort atoms of *(A)
-            com = center_of_mass(self.reg_star_a)
-            u = self.reg_star_a - com
-            norm = np.linalg.norm(u, axis=1)
-            u /= norm[:, np.newaxis]
-            cos = np.dot(u, vecx)
-            angles = np.where(np.dot(u, vecy) > 0, np.arccos(cos),
-                              2 * np.pi - np.arccos(cos))
-
-            # sort points according to angles
-            idx = np.arange(angles.size)
-            idx = idx[np.argsort(angles)]
-            idx = np.append(idx, idx[0])
-
-            # compute curvature
-            angles = dict()
-            for i, j in np.column_stack([idx[:-1], idx[1:]]):
-                u = self.reg_star_a[i, :] - self._a
-                u /= np.linalg.norm(u)
-
-                v = self.reg_star_a[j, :] - self._a
-                v /= np.linalg.norm(v)
-
-                cos = np.dot(u, v)
-                if radians:
-                    angles[(i, j)] = np.arccos(cos)
-                else:
-                    angles[(i, j)] = np.degrees(np.arccos(cos))
-
-        return angles
-
     def as_dict(self, radians=True):
         """ 
         Return a dict version of all the properties that can be computed using
@@ -383,64 +524,13 @@ class VertexAtom:
         Args:
             radians (bool): if True, angles are returned in radians (default)
         """
-        data = {
+        data = super().as_dict(radians=radians)
+        data.update({
             "pyrA": self.pyrA_r if radians else self.pyrA,
             "spherical_curvature": self.spherical_curvature,
-            "angular_defect": self.angular_defect if radians else np.degrees(self.angular_defect),
             "improper": self.improper if radians else np.degrees(self.improper),
-            "pyr_distance": self.pyr_distance,
-            "atom_A": self.a,
-            "star_A": self.star_a,
-            "n_star_A": len(self.star_a),
-        }
+        })
         return data
-
-    @staticmethod
-    def from_pyramid(length, theta, n_star_A=3, radians=False, perturb=None):
-        r"""Set up a VertexAtom from an ideal pyramidal structure.
-        Build an ideal pyramidal geometry given the angle theta and randomize
-        the positions by adding a noise of a given magnitude. The vertex of the 
-        pyramid is the point A, and :math:`\star(A)`. are the points linked to 
-        the vertex. The size of :math:`\star(A)`. is at least 3.
-
-        :math:`\theta` is the angle between the normal vector of the plane defined
-        from :math:`\star(A)` and the bonds between A and :math:`\star(A)`. 
-        The pyramidalisation angle is defined from :math:`\theta` such as
-
-        .. math::
-
-            pyrA = \theta - \frac{\pi}{2}
-
-        Args:
-            length (float): the bond lenght
-            theta (float): Angle to define the pyramid
-            n_star_A (int): number of point bonded to A the vertex of the pyramid.
-            radian (bool): True if theta is in radian (default False)
-            perturb (float): Give the width of a normal distribution from which
-                random numbers are choosen and added to the coordinates.
-
-        Returns:
-            A VertexAtom instance
-        """
-        r_theta = theta if radians else np.radians(theta)
-        if n_star_A < 3:
-            raise ValueError(
-                "n_star_A = {} and must be greater than 3.".format(n_star_A))
-
-        # build an ideal pyramid
-        IB = length * np.sin(r_theta)
-        step_angle = 2 * np.pi / n_star_A
-        coords = [[0, 0, -length * np.cos(r_theta)]]
-        coords += [[IB * np.cos(iat * step_angle),
-                    IB * np.sin(iat * step_angle),
-                    0] for iat in range(n_star_A)]
-        coords = np.array(coords, dtype=np.float)
-
-        # randomize positions
-        if perturb:
-            coords[1:, :] += np.random.normal(0, perturb, size=(n_star_A, 3))
-
-        return VertexAtom(coords[0], coords[1:])
 
     def __str__(self):
         """ str representatio of the vertex atom """
@@ -452,7 +542,7 @@ class VertexAtom:
 
     def __repr__(self):
         """ representation of the vertex atom """
-        return "VertexAtom(a={}, star_a={})".format(self.a, self.star_a)
+        return "TrivalentVertex(a={}, star_a={})".format(self.a, self.star_a)
 
     def write_file(self, species="C", filename="vertex.xyz"):
         r"""Write the coordinates of atom A and atoms :math:`\star(A)`
@@ -489,52 +579,54 @@ class VertexAtom:
             return lines
 
 
-class Hybridization:
+class POAV1:
     r"""
-    This class compute the hybridization of the s and p atomic orbitals of a
-    given atom A, considering the pyramidalization angle. All the properties
-    are computed from the value of the pyramidalization angle.
+    In the case of the POAV1 theory
+    the POAV vector has the property to make a constant angle with each bond
+    connected to atom A.
 
-    For a precise definition of the various quantities look at the definitions
-    in JCP 2020.
+    This class computes indicators related to the POAV1 theory of R.C. Haddon
+    following the link established between pyrA and the hybridization of a
+    trivalent atom in reference [JCP2020]_.
 
-    A chemical picture of the hybridization can be draw by considering the
-    contribution of the :math:`p_z` atomic oribtal to the system :math:`\sigma`,
-    or the contribution of the s atomic orbital to the system :math:`\pi`. 
+    A chemical picture of the hybridization can be drawn by considering the
+    contribution of the :math:`p` atomic oribtals to the system :math:`\sigma`,
+    or the contribution of the s atomic orbital to the system :math:`\pi`. This
+    is achieved using the m and n quantities. For consistency with POAV2 class,
+    the attributes, ``hybridization``, ``sigma_hyb_nbr`` and ``pi_hyb_nbr`` 
+    are also implemented but return the same values.
     """
 
-    def __init__(self, pyrA=None, vertex=None, radians=False):
+    def __init__(self, vertex):
         r"""
-        Define the vertex atom or the pyramidalization angle of this atom.
-        The pyramidalization angle `pyrA` value is considered first.
-        If not provided, the pyramidalization angle is computed from the 
-        definition of the vertex using the `VertexAtom` class.
+        POAV1 is defined from the local geometry of an atom at a vertex of the
+        molecule's squeleton.
 
         Args:
-            pyrA (float): value of the pyramidalization angle
-            vertex (VertexAtom): Vertex atom A and atoms of :math:`\star(A)`
-            radians (bool): if true the value of pyrA is in radian (default False)
+            vertex (TrivalentVertex): the trivalent vertex atom
         """
-        if pyrA is not None:
-            self._pyrA = pyrA if radians else np.radians(pyrA)
-        elif vertex is not None:
-            if isinstance(vertex, VertexAtom):
-                self._pyrA = vertex.pyrA_r
-            else:
-                raise TypeError("vertex must be of type VertexAtom")
+        if isinstance(vertex, TrivalentVertex):
+            self.vertex = vertex
+        elif isinstance(vertex, VertexAtom):
+            self.vertex = TrivalentVertex(vertex.a, vertex.star_a)
         else:
-            raise ValueError(
-                "You have to provide either pyrA or a vertex atom.")
+            raise TypeError("vertex must be of type VertexAtom or of type"
+                            " TrivalentVertex. vertex is {}".format(type(vertex)))
 
     @property
     def pyrA(self):
         """ Pyramidalization angle in degrees """
-        return np.degrees(self._pyrA)
+        return self.vertex.pyrA
 
     @property
     def pyrA_r(self):
         """ Pyramidalization angle in radians """
-        return self._pyrA
+        return self.vertex.pyrA_r
+
+    @property
+    def poav(self):
+        """ Return a unitary vector along the POAV vector """
+        return self.vertex.reg_normal
 
     @property
     def c_pi(self):
@@ -546,7 +638,7 @@ class Hybridization:
 
             c_{\pi} = \sqrt{2} \tan Pyr(A)
         """
-        return np.sqrt(2) * np.tan(self._pyrA)
+        return np.sqrt(2) * np.tan(self.pyrA_r)
 
     @property
     def lambda_pi(self):
@@ -560,15 +652,12 @@ class Hybridization:
         """
 
         # check domain definition of lambda_pi
-        values = 1 - 2 * np.tan(self._pyrA) ** 2
-        wrong = values < 0
-        if np.all(wrong):
+        value = 1 - 2 * np.tan(self.pyrA_r) ** 2
+        if value < 0:
             raise ValueError("lambda_pi is not define. "
                              "pyrA (degrees) = {}".format(self.pyrA))
-        elif np.any(wrong):
-            values = np.where(values > 0, values, np.nan)
-
-        return np.sqrt(values)
+        else:
+            return np.sqrt(value)
 
     @property
     def m(self):
@@ -593,6 +682,27 @@ class Hybridization:
         return 3 * self.m + 2
 
     @property
+    def pi_hyb_nbr(self):
+        """ 
+        This quantity measure the weight of the s atomic orbital with
+        respect to the p atomic orbital in the :math:`h_{\pi}` hybrid orbital 
+        along the POAV vector.
+
+        This is equal to m.
+        """
+        return self.m
+
+    @property
+    def sigma_hyb_nbr(self):
+        """ 
+        This quantity measure the weight of the p atomic orbitals with
+        respect to s in the hi hybrid orbitals along the bonds with atom A.
+
+        This is equal to n
+        """
+        return self.n
+
+    @property
     def hybridization(self):
         r""" 
         Compute the hybridization such as 
@@ -601,20 +711,22 @@ class Hybridization:
 
             s p^{(2 + c_{\pi}^2) / (1 - c_{\pi}^2)}
 
-        This quantity corresponds to the amount of pz AO in the system 
-        :math:`\sigma` and corresponds to the :math:`\tilde{n}` value defined 
-        by Haddon.
+        This quantity corresponds to the amount of p AO in the system 
+        :math:`\sigma`. This is equal to n and corresponds to the 
+        :math:`\tilde{n}` value defined by Haddon.
+
+        TODO: verifier si cette quantité est égale à n uniquement dans le cas 
+        C3v.
         """
+#        return self.n
         return (2 + self.c_pi ** 2) / (1 - self.c_pi ** 2)
 
-    def as_dict(self):
+    def as_dict(self, radians=True, include_vertex=False):
         r""" 
         Return a dict version of all the properties that can be computed with
         this class. Note that in the case of :math:`\lambda_{\pi}` and 
         :math:`c_{\pi}` the squared values are returned as as they are more 
         meaningfull.
-
-        All quantities do not have unit.
         """
         data = {
             "hybridization": self.hybridization,
@@ -622,7 +734,146 @@ class Hybridization:
             "m": self.m,
             # "lambda_pi": self.lambda_pi,
             # "c_pi": self.c_pi,
-            "c_pi^2": self.c_pi**2,
-            "lambda_pi^2": self.lambda_pi**2,
+            "c_pi^2": self.c_pi ** 2,
+            "lambda_pi^2": self.lambda_pi ** 2,
+            "poav": self.poav.tolist(),
         }
+        if include_vertex:
+            data.update(self.vertex.as_dict(radians=radians))
+
+        return data
+
+
+class POAV2:
+    r"""
+    In the case of the POAV2 theory the POAV2 vector on atom A is such as the 
+    set of hybrid molecular orbitals :math:`{h_{\pi}, h_1, h_2, h_3}` is 
+    orthogonal ; where the orbitals :math:`h_i` are hybrid orbitals along the 
+    bonds with atoms linked to atom A and :math:`h_{\pi}` is the orbital along
+    the POAV2 :math:`\vec{u}_{\pi}` vector.
+
+    This class computes indicators related to the POAV2 theory of R.C. Haddon
+    following the demonstrations in the reference [POAV2]_.
+    """
+
+    def __init__(self, vertex):
+        r"""
+        POAV1 is defined from the local geometry of an atom at a vertex of the
+        molecule's squeleton.
+
+        Args:
+            vertex (TrivalentVertex): the trivalent vertex atom
+        """
+        if isinstance(vertex, TrivalentVertex):
+            self.vertex = vertex
+        elif isinstance(vertex, VertexAtom):
+            self.vertex = TrivalentVertex(vertex.a, vertex.star_a)
+        else:
+            raise TypeError("vertex must be of type VertexAtom or of type"
+                            " TrivalentVertex. vertex is {}".format(type(vertex)))
+
+        self.angles = self.vertex.get_angles(radians=True)
+
+    @property
+    def matrix(self):
+        """
+        Compute and return the sigma-orbital hybridization numbers n1, n2 and n3
+        """
+        cos_01 = np.cos(self.angles[(0, 1)])
+        cos_02 = np.cos(self.angles[(0, 2)])
+        cos_12 = np.cos(self.angles[(1, 2)])
+
+        ui = self.vertex.reg_star_a - self.vertex.a
+
+        M = np.array([
+            [ui[2, 0] * cos_01 - ui[1, 0] * cos_02,
+             ui[2, 1] * cos_01 - ui[1, 1] * cos_02,
+             ui[2, 2] * cos_01 - ui[1, 2] * cos_02],
+            [ui[0, 0] * cos_12 - ui[2, 0] * cos_01,
+             ui[0, 1] * cos_12 - ui[2, 1] * cos_01,
+             ui[0, 2] * cos_12 - ui[2, 2] * cos_01],
+            [ui[1, 0] * cos_02 - ui[0, 0] * cos_12,
+             ui[1, 1] * cos_02 - ui[0, 1] * cos_12,
+             ui[1, 2] * cos_02 - ui[0, 2] * cos_12]
+        ])
+
+        return M
+
+    @property
+    def u_pi(self):
+        r"""
+        Return vector :math:`u_{\pi}` as the basis of the zero space of the 
+        matrix M. This unitary vector support the POAV2 vector.
+        """
+        u = sp.linalg.null_space(self.matrix)
+        rank = u.shape[1]
+        if rank != 1:
+            raise ValueError("The rank of the null space is not equal to 1. "
+                             "The POAV2 u_pi vector may not exist. "
+                             "rank = %d" % rank)
+
+        return u.ravel()
+
+    @property
+    def sigma_hyb_nbrs(self):
+        r"""
+        Compute and return the sigma-orbital hybridization numbers n1, n2 and n3.
+        These quantities measure the weight of the p atomic orbitals with
+        respect to s in each of the :math:`h_i` hybrid orbitals along the bonds 
+        with atom A.
+        """
+        cos_01 = np.cos(self.angles[(0, 1)])
+        cos_02 = np.cos(self.angles[(0, 2)])
+        cos_12 = np.cos(self.angles[(1, 2)])
+
+        n1 = - cos_12 / cos_01 / cos_02
+        n2 = - cos_02 / cos_12 / cos_01
+        n3 = - cos_01 / cos_02 / cos_12
+
+        return n1, n2, n3
+
+    @property
+    def pi_hyb_nbr(self):
+        r"""
+        This quantity measure the weight of the s atomic orbital with
+        respect to the p atomic orbital in the :math:`h_{\pi}` hybrid orbital
+        along the POAV2 vector.
+        """
+        n = self.sigma_hyb_nbrs
+
+        w_sigma = sum([1 / (1 + ni) for ni in n])
+        m = 1 / w_sigma - 1
+
+        return m
+
+    @property
+    def pyrA_r(self):
+        r"""
+        Compute the angles between vector :math:`u_{\pi}` and all the bonds 
+        between atom A and atoms B in :math:`\star(A)`. 
+        """
+        ui = self.vertex.reg_star_a - self.vertex.a
+        scal = np.dot(ui, self.u_pi)
+        return np.arccos(scal)
+
+    @property
+    def pyrA(self):
+        return np.degrees(self.pyrA_r)
+
+    def as_dict(self, radians=True, include_vertex=False):
+        r""" 
+        Return a dict version of all the properties that can be computed with
+        this class.
+        """
+        data = {
+            "pi_hyb_nbr": self.pi_hyb_nbr,
+            "u_pi": self.u_pi.tolist(),
+            "matrix": self.matrix.tolist(),
+        }
+        data.update({"n_%d" % i: ni
+                     for i, ni in enumerate(self.sigma_hyb_nbrs, 1)})
+
+        if include_vertex:
+            data.update(self.vertex.as_dict(radians=radians))
+
         return data

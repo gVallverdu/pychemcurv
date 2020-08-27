@@ -10,7 +10,7 @@ import pandas as pd
 
 from pymatgen import Molecule, Structure
 from pymatgen.core.bonds import obtain_all_bond_lengths
-from .core import VertexAtom, Hybridization
+from .core import VertexAtom, TrivalentVertex, POAV1, POAV2
 
 
 __author__ = "Germain Salvato-Vallverdu"
@@ -151,28 +151,37 @@ class CurvatureAnalyzer:
 
         if errors:
             print("errors\n", "\n".join(errors))
+            print("Default cutoff of {} was used for the above bond".format(self.rcut))
 
     def _compute_data(self):
         """ Compute geometric and hybridation data for all vertex in the
         structure and store them in a DataFrame. """
 
         data = list()
+        nan_array = np.empty(3)
+        nan_array.fill(np.nan)
         for vertex, vertex_idx in zip(self.vertices, self.vertices_idx):
             if vertex is None:
-                nan_array = np.empty(3)
-                nan_array.fill(np.nan)
-                vdata = {
-                    **VertexAtom(nan_array, nan_array).as_dict(),
-                    **Hybridization(pyrA=np.nan).as_dict()
-                }
+                vdata = {}
                 vdata["n_star_A"] = 0
             else:
-                hyb = Hybridization(vertex=vertex)
-                try:
-                    vdata = {**vertex.as_dict(radians=False), **hyb.as_dict()}
-                except ValueError:
+                if len(vertex.star_a) == 3:
+                    vertex = TrivalentVertex(vertex.a, vertex.star_a)
+
+                    try:
+                        poav1 = POAV1(vertex=vertex)
+                        poav2 = POAV2(vertex=vertex)
+                    except ValueError as e:
+                        print("Unable to compute all data.", 
+                              vertex.as_dict(radians=False))
+                        print(e)
+                    vdata = {
+                        **poav1.as_dict(radians=False, include_vertex=True),
+                        **poav2.as_dict(radians=False)
+                    }
+                else:
                     vdata = vertex.as_dict(radians=False)
-                    print("Unable to compute all data.")
+
 
             ia = vertex_idx[0]
             vdata.update(atom_idx=ia, species=self.structure[ia].specie.symbol)

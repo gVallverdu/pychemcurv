@@ -12,6 +12,6 @@ __copyright__ = "University of Pau and Pays Adour"
 __version__ = "2020.4.22"
 __email__ = "germain.vallverdu@univ-pau.fr"
 
-from .core import VertexAtom, Hybridization
+from .core import VertexAtom, TrivalentVertex, POAV1, POAV2
 from .analysis import CurvatureAnalyzer
 from .vis import CurvatureViewer

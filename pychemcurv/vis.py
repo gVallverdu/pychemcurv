@@ -1,14 +1,14 @@
 # coding: utf-8
 
 """
-This module implements the `CurvatureViewer` class in order to visualize a
-molecule or a periodic structure in a jupyter notebook and map a given 
-properties on the atoms using a color scale.
+The ``pychemcurv.vis`` module implements the ``CurvatureViewer`` 
+class in order to visualize a molecule or a periodic structure in a jupyter 
+notebook and map a given properties on the atoms using a color scale.
 
 This class needs, `nglview <https://github.com/arose/nglview>`_ and uses
 ipywidgets in a jupyter notebook to display the visualization. Run the 
-following instructions to isntall and be able to use nglview in a jupyter
-notebook
+following instructions to install nglview and achieve the configuration 
+in order to be able to use nglview in a jupyter notebook
 
 ::
 
@@ -24,19 +24,18 @@ or
 
 """
 
-__author__ = "Germain Salvato-Vallverdu"
-__copyright__ = "University of Pau and Pays Adour"
-__email__ = "germain.vallverdu@univ-pau.fr"
-
-__all__ = ["CurvatureViewer"]
-
-
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 from pymatgen import Molecule, Structure
 from .analysis import CurvatureAnalyzer
+
+__author__ = "Germain Salvato-Vallverdu"
+__copyright__ = "University of Pau and Pays Adour"
+__email__ = "germain.vallverdu@univ-pau.fr"
+
+__all__ = ["CurvatureViewer"]
 
 
 class CurvatureViewer:
@@ -91,7 +90,7 @@ class CurvatureViewer:
             import nglview as nv
         except ImportError as e:
             print("WARNING: You need to install ase and nglview to perform "
-                "visualization.")
+                  "visualization.")
             print(e)
             return None
 
@@ -116,7 +115,7 @@ class CurvatureViewer:
 
         return view
 
-    def map_view(self, prop, radius=0.25, aspect_ratio=2, unitcell=False, 
+    def map_view(self, prop, radius=0.25, aspect_ratio=2, unitcell=False,
                  cm="viridis", minval=None, maxval=None, orientation="vertical",
                  label=None, width="700px", height="500px"):
         """ Map the given properties on a color scale on to the molecule using
@@ -154,9 +153,13 @@ class CurvatureViewer:
             return None
 
         # check property data
-        if isinstance(prop, str) and prop in self.data.columns:
-            prop_vals = self.data[prop].values
-            label = prop if label is None else label
+        if isinstance(prop, str):
+            if prop in self.data.columns:
+                prop_vals = self.data[prop].values
+                label = prop if label is None else label
+            else:
+                print("Available data are", data.columns)
+                raise ValueError("prop %s not found in data." % prop)
         else:
             try:
                 prop_vals = np.array(prop, dtype=np.float64).reshape(
@@ -193,7 +196,7 @@ class CurvatureViewer:
         ax.set_title(label)
 
         # set up the visualization
-        view = self.get_view(representation="ball+stick", radius=radius, 
+        view = self.get_view(representation="ball+stick", radius=radius,
                              aspect_ratio=aspect_ratio, unitcell=unitcell,
                              width=width, height=height)
 
@@ -206,7 +209,7 @@ class CurvatureViewer:
                 continue
             color = mpl.colors.rgb2hex(cmap(X=normalize(val), alpha=1))
             view.add_representation('ball+stick', selection=[iat], color=color,
-                                    radius=1.05 * radius, 
+                                    radius=1.05 * radius,
                                     aspect_ratio=aspect_ratio)
 
         # resize nglview widget

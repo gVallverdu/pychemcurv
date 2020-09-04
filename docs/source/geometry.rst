@@ -12,3 +12,6 @@ pychemcurv.geometry
 
 
 .. autofunction:: pychemcurv.geometry.get_plane
+
+
+.. autofunction:: pychemcurv.geometry.get_dihedral

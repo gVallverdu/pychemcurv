@@ -256,12 +256,13 @@ class VertexAtom:
     @property
     def angular_defect(self):
         r"""
-        Compute the angular defect as a measure of the discrete curvature around 
-        the vertex, point A.
+        Compute the angular defect in radians as a measure of the discrete 
+        curvature around the vertex, point A.
 
         The calculation first looks for the best fitting plane of points 
         belonging to :math:`\star(A)` and sorts that points in order to compute 
-        the angles between the edges connected to the vertex (A).
+        the angles between the edges connected to the vertex (A). See the
+        get_angles method.
         """
         angles = self.get_angles(radians=True)
         ang_defect = 2 * np.pi - sum(angles.values())
@@ -296,6 +297,52 @@ class VertexAtom:
             "pyr_distance": self.pyr_distance,
         }
         return data
+
+    def write_file(self, species="C", filename="vertex.xyz"):
+        r"""Write the coordinates of atom A and atoms :math:`\star(A)`
+        in a file in xyz format. You can set the name of species or a list but 
+        the length of the list must be equal to the number of atoms.
+        If filename is None, returns the string corresponding to the xyz file.
+
+        Args:
+            species (str, list): name of the species or list of the species names
+            filename (str): path of the output file or None to get a string
+
+        Returns:
+            None if filename is a path, else, the string corresponding to the
+            xyz file.
+        """
+        nat = len(self.star_a) + 1
+        if len(species) != nat:
+            species = nat * "C"
+
+        lines = "%d\n" % nat
+        lines += "xyz file from pychemcurv, "
+        lines += "%2s %12.6f %12.6f %12.6f\n" % (species[0],
+                                                 self.a[0], self.a[1], self.a[2])
+        for iat in range(0, nat - 1):
+            lines += "%2s " % species[iat]
+            lines += " ".join(["%12.6f" % x for x in self.star_a[iat]])
+            lines += "\n"
+
+        if filename is not None:
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(lines)
+        else:
+            return lines
+
+    def __str__(self):
+        """ str representatio of the vertex atom """
+        s = "angular defect: {:.4f} degrees\n".format(
+            np.degrees(self.angular_defect))
+        s += "size of *(A): {}\n".format(len(self.star_a))
+        s += "Atom A:\n{}\n".format(self.a)
+        s += "Atoms B in *(A):\n{}\n".format(self.star_a)
+        return s
+
+    def __repr__(self):
+        """ representation of the vertex atom """
+        return "VertexAtom(a={}, star_a={})".format(self.a, self.star_a)
 
 
 class TrivalentVertex(VertexAtom):
@@ -450,7 +497,7 @@ class TrivalentVertex(VertexAtom):
         equal to 3.
         """
         return get_dihedral(np.concatenate((self._a[np.newaxis, :], self._star_a)))
-        
+
     @property
     def pyrA_r(self):
         """ Return the pyramidalization angle in radians. """
@@ -510,7 +557,6 @@ class TrivalentVertex(VertexAtom):
     def __str__(self):
         """ str representatio of the vertex atom """
         s = "pyrA: {:.4f} degrees\n".format(self.pyrA)
-        s += "size of *(A): {}\n".format(len(self.star_a))
         s += "Atom A:\n{}\n".format(self.a)
         s += "Atoms B in *(A):\n{}\n".format(self.star_a)
         return s
@@ -518,40 +564,6 @@ class TrivalentVertex(VertexAtom):
     def __repr__(self):
         """ representation of the vertex atom """
         return "TrivalentVertex(a={}, star_a={})".format(self.a, self.star_a)
-
-    def write_file(self, species="C", filename="vertex.xyz"):
-        r"""Write the coordinates of atom A and atoms :math:`\star(A)`
-        in a file in xyz format. You can set the name of species or a list but 
-        the length of the list must be equal to the number of atoms.
-        If filename is None, returns the string corresponding to the xyz file.
-
-        Args:
-            species (str, list): name of the species or list of the species names
-            filename (str): path of the output file or None to get a string
-
-        Returns:
-            None if filename is a path, else, the string corresponding to the
-            xyz file.
-        """
-        nat = len(self.star_a) + 1
-        if len(species) != nat:
-            species = nat * "C"
-
-        lines = "%d\n" % nat
-        lines += "xyz file from pychemcurv, "
-        lines += "pyrA = %.4f degrees\n" % self.pyrA
-        lines += "%2s %12.6f %12.6f %12.6f\n" % (species[0],
-                                                 self.a[0], self.a[1], self.a[2])
-        for iat in range(0, nat - 1):
-            lines += "%2s " % species[iat]
-            lines += " ".join(["%12.6f" % x for x in self.star_a[iat]])
-            lines += "\n"
-
-        if filename is not None:
-            with open(filename, "w", encoding="utf-8") as f:
-                f.write(lines)
-        else:
-            return lines
 
 
 class POAV1:
@@ -787,7 +799,14 @@ class POAV2:
                              "The POAV2 u_pi vector may not exist. "
                              "rank = %d" % rank)
 
-        return u.ravel()
+        u = u.ravel()
+
+        # make the direction of u_pi the same as IA (and thus reg_normal)
+        # I is the center of mass of *(A)
+        IA = self.vertex.a - self.vertex.com
+        if np.dot(IA, u) < 0:
+            u *= -1
+        return u
 
     @property
     def sigma_hyb_nbrs(self):

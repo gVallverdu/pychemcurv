@@ -11,6 +11,7 @@ __author__ = "Germain Salvato-Vallverdu"
 __copyright__ = "University of Pau and Pays Adour"
 __email__ = "germain.vallverdu@univ-pau.fr"
 
+__all__ = ["center_of_mass", "circum_center", "get_plane", "get_dihedral"]
 
 def center_of_mass(coords, masses=None):
     r"""Compute the center of mass of the points at coordinates `coords` with
@@ -140,3 +141,25 @@ def get_plane(coords, masses=None):
         _, _, (vecx, vecy, n_a) = np.linalg.svd(coords - com)
 
     return vecx, vecy, n_a
+
+
+def get_dihedral(coords):
+    r"""
+    Compute the improper angle in randians between planes defined by atoms 
+    (0, 1, 2) and (1, 2, 3).
+    """
+
+    # (i, 0) (j, 1) (k, 2) (l, 3)
+    # compute vectors
+    vij = coords[1] - coords[0]
+    vjk = coords[2] - coords[1]
+    vlk = coords[2] - coords[3]
+    m = np.cross(vij, vjk)  # perpendicular to ijk
+    n = np.cross(vlk, vjk)  # perpendicular to jkl
+
+    # compute the angle
+    theta = np.arctan2(np.dot(vij, n) * np.linalg.norm(vjk), np.dot(m, n))
+    # theta2 = np.arccos(np.dot(m, n) / np.linalg.norm(m) / np.linalg.norm(n))
+    # print(np.degrees(theta), np.degrees(theta2))
+
+    return theta

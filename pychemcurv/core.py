@@ -20,7 +20,7 @@ classes of this module can be found in article [JCP2020]_.
 
 import numpy as np
 import scipy as sp
-from .geometry import get_plane, circum_center, center_of_mass
+from .geometry import get_plane, circum_center, center_of_mass, get_dihedral
 
 __author__ = "Germain Salvato Vallverdu"
 __copyright__ = "University of Pau and Pays Adour"
@@ -449,33 +449,8 @@ class TrivalentVertex(VertexAtom):
         This quantity is available only if the length of :math:`\star(A)` is 
         equal to 3.
         """
-
-        # improper angle is defined only in the case of 3 atoms in *(A)
-
-        # get coords
-        icoords = self._a
-        jcoords, kcoords, lcoords = self._star_a
-
-        # compute vectors
-        vij = jcoords - icoords
-        vjk = kcoords - jcoords
-        vlk = kcoords - lcoords
-        m = np.cross(vij, vjk)  # perpendicular to ijk
-        n = np.cross(vlk, vjk)  # perpendicular to jkl
-
-        # print("vij ", vij)
-        # print("vjk ", vjk)
-        # print("vlk ", vlk)
-        # print("m   ", m)
-        # print("n   ", n)
-
-        # compute the angle
-        theta = np.arctan2(np.dot(vij, n) * np.linalg.norm(vjk), np.dot(m, n))
-        # theta2 = np.arccos(np.dot(m, n) / np.linalg.norm(m) / np.linalg.norm(n))
-        # print(np.degrees(theta), np.degrees(theta2))
-
-        return theta
-
+        return get_dihedral(np.concatenate((self._a[np.newaxis, :], self._star_a)))
+        
     @property
     def pyrA_r(self):
         """ Return the pyramidalization angle in radians. """

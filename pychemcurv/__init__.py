@@ -15,3 +15,6 @@ __email__ = "germain.vallverdu@univ-pau.fr"
 from .core import VertexAtom, TrivalentVertex, POAV1, POAV2
 from .analysis import CurvatureAnalyzer
 from .vis import CurvatureViewer
+
+# import convenient object from pymatgen
+from pymatgen.core import Molecule, Structure

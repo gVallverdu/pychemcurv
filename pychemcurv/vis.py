@@ -28,7 +28,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-from pymatgen import Molecule, Structure
+from pymatgen.core import Molecule, Structure
 from .analysis import CurvatureAnalyzer
 
 __author__ = "Germain Salvato-Vallverdu"

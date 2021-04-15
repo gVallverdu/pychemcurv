@@ -19,7 +19,7 @@ classes of this module can be found in article [JCP2020]_.
 """
 
 import numpy as np
-import scipy as sp
+from scipy.linalg import null_space
 from .geometry import get_plane, circum_center, center_of_mass, get_dihedral
 
 __author__ = "Germain Salvato Vallverdu"
@@ -138,7 +138,7 @@ class VertexAtom:
         coords += [[IB * np.cos(iat * step_angle),
                     IB * np.sin(iat * step_angle),
                     0] for iat in range(n_star_A)]
-        coords = np.array(coords, dtype=np.float)
+        coords = np.array(coords, dtype=np.float64)
 
         # randomize positions
         if perturb:
@@ -317,12 +317,12 @@ class VertexAtom:
             species = nat * "C"
 
         lines = "%d\n" % nat
-        lines += "xyz file from pychemcurv, "
+        lines += "xyz file from pychemcurv\n"
         lines += "%2s %12.6f %12.6f %12.6f\n" % (species[0],
                                                  self.a[0], self.a[1], self.a[2])
-        for iat in range(0, nat - 1):
+        for iat in range(1, nat):
             lines += "%2s " % species[iat]
-            lines += " ".join(["%12.6f" % x for x in self.star_a[iat]])
+            lines += " ".join(["%12.6f" % x for x in self.star_a[iat - 1]])
             lines += "\n"
 
         if filename is not None:
@@ -670,8 +670,7 @@ class POAV1:
 
     @property
     def pi_hyb_nbr(self):
-        """ 
-        This quantity measure the weight of the s atomic orbital with
+        r""" This quantity measure the weight of the s atomic orbital with
         respect to the p atomic orbital in the :math:`h_{\pi}` hybrid orbital 
         along the POAV vector.
 
@@ -681,8 +680,7 @@ class POAV1:
 
     @property
     def sigma_hyb_nbr(self):
-        """ 
-        This quantity measure the weight of the p atomic orbitals with
+        """ This quantity measure the weight of the p atomic orbitals with
         respect to s in the hi hybrid orbitals along the bonds with atom A.
 
         This is equal to n
@@ -691,8 +689,7 @@ class POAV1:
 
     @property
     def hybridization(self):
-        r""" 
-        Compute the hybridization such as 
+        r""" Compute the hybridization such as 
 
         .. math::
 
@@ -702,18 +699,17 @@ class POAV1:
         :math:`\sigma`. This is equal to n and corresponds to the 
         :math:`\tilde{n}` value defined by Haddon.
 
-        TODO: verifier si cette quantité est égale à n uniquement dans le cas 
-        C3v.
+        TODO: verifier si cette quantité est égale à n uniquement dans 
+        le cas C3v.
         """
 #        return self.n
         return (2 + self.c_pi ** 2) / (1 - self.c_pi ** 2)
 
     def as_dict(self, radians=True, include_vertex=False):
-        r""" 
-        Return a dict version of all the properties that can be computed with
-        this class. Note that in the case of :math:`\lambda_{\pi}` and 
-        :math:`c_{\pi}` the squared values are returned as as they are more 
-        meaningfull.
+        r""" Return a dict version of all the properties that can be 
+        computed with this class. Note that in the case of 
+        :math:`\lambda_{\pi}` and :math:`c_{\pi}` the squared values are
+        returned as as they are more meaningfull.
         """
         data = {
             "hybridization": self.hybridization,
@@ -732,21 +728,19 @@ class POAV1:
 
 
 class POAV2:
-    r"""
-    In the case of the POAV2 theory the POAV2 vector on atom A is such as the 
-    set of hybrid molecular orbitals :math:`{h_{\pi}, h_1, h_2, h_3}` is 
-    orthogonal ; where the orbitals :math:`h_i` are hybrid orbitals along the 
-    bonds with atoms linked to atom A and :math:`h_{\pi}` is the orbital along
-    the POAV2 :math:`\vec{u}_{\pi}` vector.
+    r""" In the case of the POAV2 theory the POAV2 vector on atom A is 
+    such as the set of hybrid molecular orbitals :math:`{h_{\pi}, h_1, h_2, h_3}` 
+    is orthogonal ; where the orbitals :math:`h_i` are hybrid orbitals 
+    along the bonds with atoms linked to atom A and :math:`h_{\pi}` is 
+    the orbital along the POAV2 :math:`\vec{u}_{\pi}` vector.
 
-    This class computes indicators related to the POAV2 theory of R.C. Haddon
-    following the demonstrations in the reference [POAV2]_.
+    This class computes indicators related to the POAV2 theory of 
+    R.C. Haddon following the demonstrations in the reference [POAV2]_.
     """
 
     def __init__(self, vertex):
-        r"""
-        POAV1 is defined from the local geometry of an atom at a vertex of the
-        molecule's squeleton.
+        r""" POAV1 is defined from the local geometry of an atom at a 
+        vertex of the molecule's squeleton.
 
         Args:
             vertex (TrivalentVertex): the trivalent vertex atom
@@ -763,9 +757,8 @@ class POAV2:
 
     @property
     def matrix(self):
-        """
-        Compute and return the sigma-orbital hybridization numbers n1, n2 and n3
-        """
+        """ Compute and return the sigma-orbital hybridization numbers 
+        n1, n2 and n3 """
         cos_01 = np.cos(self.angles[(0, 1)])
         cos_02 = np.cos(self.angles[(0, 2)])
         cos_12 = np.cos(self.angles[(1, 2)])
@@ -792,7 +785,7 @@ class POAV2:
         Return vector :math:`u_{\pi}` as the basis of the zero space of the 
         matrix M. This unitary vector support the POAV2 vector.
         """
-        u = sp.linalg.null_space(self.matrix)
+        u = null_space(self.matrix)
         rank = u.shape[1]
         if rank != 1:
             raise ValueError("The rank of the null space is not equal to 1. "

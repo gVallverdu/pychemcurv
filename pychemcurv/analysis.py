@@ -8,7 +8,7 @@ analyses on molecular or periodic structures.
 import numpy as np
 import pandas as pd
 
-from pymatgen import Molecule, Structure
+from pymatgen.core import Molecule, Structure
 from pymatgen.core.bonds import obtain_all_bond_lengths
 from .core import VertexAtom, TrivalentVertex, POAV1, POAV2
 

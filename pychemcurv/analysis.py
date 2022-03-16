@@ -176,12 +176,12 @@ class CurvatureAnalyzer:
                               vertex.as_dict(radians=False))
                         print(e)
                     vdata = {
-                        **poav1.as_dict(radians=False, include_vertex=True),
-                        **poav2.as_dict(radians=False)
+                        **poav1.as_dict(
+                            radians=False, include_vertex=True, list_obj=True),
+                        **poav2.as_dict(radians=False, list_obj=True)
                     }
                 else:
-                    vdata = vertex.as_dict(radians=False)
-
+                    vdata = vertex.as_dict(radians=False, list_obj=True)
 
             ia = vertex_idx[0]
             vdata.update(atom_idx=ia, species=self.structure[ia].specie.symbol)

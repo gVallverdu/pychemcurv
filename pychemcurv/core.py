@@ -278,20 +278,26 @@ class VertexAtom:
         """
         return np.abs(np.dot(self._a - self.com, self.normal))
 
-    def as_dict(self, radians=True):
+    def as_dict(self, radians=True, list_obj=False):
         """ 
         Return a dict version of all the properties that can be computed using
-        this class.
+        this class. Use `list_obj=True` to get a valid JSON object.
 
         Args:
             radians (bool): if True, angles are returned in radians (default)
+            list_obj (bool): if True, numpy arrays are converted into list object (default False)
+
+        Returns:
+            A dict
         """
+        angles = self.get_angles(radians=radians)
+        angles = [[i, j, angle] for (i,j), angle in angles.items()]
         data = {
-            "atom_A": self.a,
-            "star_A": self.star_a,
-            "reg_star_A": self.reg_star_a,
-            "distances": self.distances,
-            "angles": self.get_angles(radians=radians),
+            "atom_A": self.a.tolist() if list_obj else self.a,
+            "star_A": self.star_a.tolist() if list_obj else self.star_a,
+            "reg_star_A": self.reg_star_a.tolist() if list_obj else self.reg_star_a,
+            "distances": self.distances.tolist() if list_obj else self.distances,
+            "angles": angles,
             "n_star_A": len(self.star_a),
             "angular_defect": self.angular_defect if radians else np.degrees(self.angular_defect),
             "pyr_distance": self.pyr_distance,
@@ -538,15 +544,19 @@ class TrivalentVertex(VertexAtom):
 
         return kappa
 
-    def as_dict(self, radians=True):
+    def as_dict(self, radians=True, list_obj=False):
         """ 
         Return a dict version of all the properties that can be computed using
-        this class. 
+        this class. Use `list_obj=True` to get a valid JSON object.  
 
         Args:
             radians (bool): if True, angles are returned in radians (default)
+            list_obj (bool): if True, numpy arrays are converted into list object (default False)
+
+        Returns:
+            A dict.
         """
-        data = super().as_dict(radians=radians)
+        data = super().as_dict(radians=radians, list_obj=list_obj)
         data.update({
             "pyrA": self.pyrA_r if radians else self.pyrA,
             "spherical_curvature": self.spherical_curvature,
@@ -555,7 +565,7 @@ class TrivalentVertex(VertexAtom):
         return data
 
     def __str__(self):
-        """ str representatio of the vertex atom """
+        """ str representation of the vertex atom """
         s = "pyrA: {:.4f} degrees\n".format(self.pyrA)
         s += "Atom A:\n{}\n".format(self.a)
         s += "Atoms B in *(A):\n{}\n".format(self.star_a)
@@ -705,11 +715,20 @@ class POAV1:
 #        return self.n
         return (2 + self.c_pi ** 2) / (1 - self.c_pi ** 2)
 
-    def as_dict(self, radians=True, include_vertex=False):
+    def as_dict(self, radians=True, include_vertex=False, list_obj=False):
         r""" Return a dict version of all the properties that can be 
         computed with this class. Note that in the case of 
         :math:`\lambda_{\pi}` and :math:`c_{\pi}` the squared values are
-        returned as as they are more meaningfull.
+        returned as they are more meaningfull. Use `list_obj= True` to
+        obtain a valid JSON object.
+
+        Args:
+            radians (bool): if True, angles are returned in radians (default)
+            include_vertex (bool): if True, include also vertex data
+            list_obj (bool): if True, numpy arrays are converted into list object (default False)
+
+        Returns:
+            A dict.
         """
         data = {
             "hybridization": self.hybridization,
@@ -719,10 +738,11 @@ class POAV1:
             # "c_pi": self.c_pi,
             "c_pi^2": self.c_pi ** 2,
             "lambda_pi^2": self.lambda_pi ** 2,
-            "poav": self.poav.tolist(),
+            "poav": self.poav.tolist() if list_obj else self.poav,
         }
         if include_vertex:
-            data.update(self.vertex.as_dict(radians=radians))
+            data.update(self.vertex.as_dict(
+                radians=radians, list_obj=list_obj))
 
         return data
 
@@ -847,20 +867,29 @@ class POAV2:
     def pyrA(self):
         return np.degrees(self.pyrA_r)
 
-    def as_dict(self, radians=True, include_vertex=False):
+    def as_dict(self, radians=True, include_vertex=False, list_obj=False):
         r""" 
         Return a dict version of all the properties that can be computed with
-        this class.
+        this class. Use `list_obj= True` to obtain a valid JSON object.
+
+        Args:
+            radians (bool): if True, angles are returned in radians (default)
+            include_vertex (bool): if True, include also vertex data
+            list_obj (bool): if True, numpy arrays are converted into list object (default False)
+
+        Returns:
+            A dict.
         """
         data = {
             "pi_hyb_nbr": self.pi_hyb_nbr,
-            "u_pi": self.u_pi.tolist(),
-            "matrix": self.matrix.tolist(),
+            "u_pi": self.u_pi.tolist() if list_obj else self.u_pi,
+            "matrix": self.matrix.tolist() if list_obj else self.matrix,
         }
         data.update({"n_%d" % i: ni
                      for i, ni in enumerate(self.sigma_hyb_nbrs, 1)})
 
         if include_vertex:
-            data.update(self.vertex.as_dict(radians=radians))
+            data.update(self.vertex.as_dict(
+                radians=radians, list_obj=list_obj))
 
         return data

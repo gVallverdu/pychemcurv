@@ -151,19 +151,23 @@ def get_dihedral(coords):
     points 0, 1, 2 and 3 form a chain of bonded atoms in this order.
 
     ::
+
         0        3
          \      /
           1 -- 2
+
 
     The returned angle is an improper angle if point 0 is at the center and
     linked to other points.
 
     :: 
+    
                      3
                      |
                      0
                     /  \
                   1     2
+
 
     Args:
         coords (ndarray): numpy array of the cartesian coordinates with shape (4, 3)

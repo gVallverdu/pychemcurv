@@ -33,9 +33,10 @@ scale and the hybridization of a given atom. Second, a
 `Plotly/Dash <https://plot.ly/dash/>`_ web
 application is provided in order to perform geometrical and electronic
 analyzes on molecules or materials. The web application is available at
-`pychemapps.univ-pau.fr/mosica <https://pychemapps.univ-pau.fr/mosaica/>`_.
-The webapps allows to upload simple xyz files and compute the local geometrical
-properties and the hybridization properties.
+`pychemcurv.herokuapp.com/ <https://pychemcurv.herokuapp.com/>`_.
+The web-app allows to upload simple xyz files and compute the local geometrical
+properties and the hybridization properties. The application is available
+in a separate repository at `pychemcurv-app <https://github.com/gVallverdu/pychemcurv-app>`_.
 
 Some jupyter notebooks are provided in the ``notebooks/`` folder and present use cases
 of the classes implemented in this package. You can access to these notebooks
@@ -44,6 +45,9 @@ online with `binder <https://mybinder.org/v2/gh/gVallverdu/pychemcurv.git/2020.6
 
 Citing pychemcurv
 =================
+
+Please, consider to cite the following paper when using either the `pychemcurv`
+library or the web application.
 
 Julia Sabalot-Cuzzubbo, Germain Salvato Vallverdu, Didier Bégué and Jacky Cresson
 *Relating the molecular topology and local geometry: Haddon’s pyramidalization angle and the Gaussian curvature*, 
@@ -110,18 +114,22 @@ If you have installed nglview you have to enable the jupyter extension
 
 
 The files ``requirements.txt`` and ``environment.yml`` are provided to setup
-a full environment with all dependencies.
+a full environment with all dependencies. Using pip, in a new environment
+you can run
 
 ::
 
     pip install -r requirements.txt
 
-or using ``conda``
+or using ``conda`` you can create the new environment and install all
+dependencies in one shot by
 
 ::
 
     conda env create -f environment.yml
 
+
+The name of the new environment is `curv`.
 
 Do not forget to enable the jupyter nglview extension (see above).
 

@@ -12,9 +12,10 @@ local curvature is then used to compute the hybridization of molecular orbitals.
 
 The main features of the library are available from a 
 `Plotly/Dash <https://plot.ly/dash/>`_ web application available
-here `pychemapps.univ-pau.fr/mosica <https://pychemapps.univ-pau.fr/mosaica/>`_.
-The webapps allows to upload simple xyz files and compute the local geometrical
-properties and the hybridization properties.
+here: `pychemcurv.herokuapp.com/ <https://pychemcurv.herokuapp.com/>`_.
+The web-app allows to upload simple xyz files and compute the local geometrical
+properties and the hybridization properties. The application source code is available
+in a separate repository at `pychemcurv-app <https://github.com/gVallverdu/pychemcurv-app>`_.
 
 .. figure:: img/screenshot.png
     :align: center
@@ -33,9 +34,10 @@ application is provided in order to perform a geometrical and electronic
 analyzes on molecules or materials.
 
 The web application is available at
-`pychemapps.univ-pau.fr/mosica <https://pychemapps.univ-pau.fr/mosaica/>`_.
-The webapps allows to upload simple xyz files and compute the local geometrical
-properties and the hybridization properties.
+`pychemcurv.herokuapp.com/ <https://pychemcurv.herokuapp.com/>`_.
+The web-app allows to upload simple xyz files and compute the local geometrical
+properties and the hybridization properties. The application source code is available
+in a separate repository at `pychemcurv-app <https://github.com/gVallverdu/pychemcurv-app>`_.
 
 Some jupyter notebooks are provided in the ``notebooks/`` folder and present use cases 
 of the classes implemented in this package. You can access to these notebooks
@@ -47,6 +49,9 @@ online with `binder <https://mybinder.org/>`_.
 
 Citing pychemcurv
 =================
+
+Please, consider to cite the following paper when using either the `pychemcurv`
+library or the web application.
 
 Julia Sabalot-Cuzzubbo, Germain Salvato Vallverdu, Didier Bégué and Jacky Cresson
 *Relating the molecular topology and local geometry: Haddon’s pyramidalization angle and the Gaussian curvature*, 
@@ -114,18 +119,22 @@ If you have installed nglview you have to enable the jupyter extension
 
 
 The files ``requirements.txt`` and ``environment.yml`` are provided to setup
-a full environment with all dependencies.
+a full environment with all dependencies. Using pip, in a new environment
+you can run the following command to install dependencies
 
 ::
 
     pip install -r requirements.txt
 
-or using ``conda``
+or using ``conda`` you can create the new environment and install all
+dependencies in one shot by
 
 ::
 
     conda env create -f environment.yml
 
+
+The name of the new environment is ``curv``.
 
 Do not forget to enable the jupyter nglview extension (see above).
 
@@ -147,12 +156,14 @@ If you want to build the documentation you also need to install sphinx.
 Run the web application
 =======================
 
-The ``app/`` folder contains a dash application that aims to use the pychemcurv 
+The web application is available in this separate repository: 
+`pychemcurv-app https://github.com/gVallverdu/pychemcurv-app <https://github.com/gVallverdu/pychemcurv-app>`_.
+The main aim of the application is to use the pychemcurv 
 package and visualize the geometrical or chemical atomic quantities mapped on 
 the chemical structure of your system.
 
 The application is available online at this address: 
-https://pychemapps.univ-pau.fr/mosaica/
+`pychemcurv.herokuapp.com/ <https://pychemcurv.herokuapp.com/>`_.
 
 Demo video:
 
@@ -163,15 +174,23 @@ Demo video:
 
 In order to run the application locally, you have to install all the dependencies
 and in particular ``dash`` and ``dash-bio``. You can do that from the files
-``requirements.txt`` or ``environment.yml``.
+``requirements.txt`` or ``environment.yml`` or directly using ``pip``.
 
-Then to run the application, change to the ``app/`` directory and run the 
+Then, clone the github repository on your computer
+
+::
+
+    git clone https://github.com/gVallverdu/pychemcurv-app.git
+
+
+To run the application, change to the ``pychemcurv-app/`` directory and run the 
 ``app.py`` file.
 
 ::
 
+    [user@computer] (curv) > $ cd pychemcurv-app/
     [user@computer] (curv) > $ python app.py
-    Running on http://127.0.0.1:8050/mosaica/
+    Running on http://127.0.0.1:8050/
     Debugger PIN: 065-022-191
     * Serving Flask app "app" (lazy loading)
     * Environment: production
@@ -183,6 +202,26 @@ Open the provided url to use the application.
 
 You can switch off the debug mode by setting ``debug=False`` on the last line of 
 the ``app.py`` file.
+
+Common error on local execution
+-------------------------------
+
+If the application does not start with an error such as:
+
+::
+
+    socket.gaierror: [Errno 8] nodename nor servname provided, or not known
+
+
+Go to the last lines of the file app.py and comment/uncomment the last
+lines to get something that reads
+
+.. code-block:: python
+
+    if __name__ == '__main__':
+        app.run_server(debug=True, host='127.0.0.1')
+        # app.run_server(debug=False)
+
 
 
 Licence and contact

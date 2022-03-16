@@ -146,10 +146,8 @@ import re
 import yaml
 
 import dash
-import dash_table
-from dash_table.Format import Format, Scheme
-import dash_html_components as html
-import dash_core_components as dcc
+from dash import html, dcc, dash_table
+from dash.dash_table.Format import Format, Scheme
 from dash.dependencies import Input, Output, State
 import plotly.graph_objs as go
 import plotly.express as px
@@ -160,7 +158,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-import pymatgen as mg
+from pymatgen.core import Molecule
 from pychemcurv import CurvatureAnalyzer
 
 __author__ = "Germain Salvato Vallverdu"
@@ -173,7 +171,7 @@ HEX_COLOR_PATT = re.compile(r"^#[A-Fa-f0-9]{6}$")
 ext_css = ["https://use.fontawesome.com/releases/v5.8.1/css/all.css"]
 app = dash.Dash(__name__,
                 external_stylesheets=ext_css,
-                url_base_pathname="/mosaica/",
+                # url_base_pathname="/mosaica/",
                 suppress_callback_exceptions=True)
 server = app.server
 
@@ -223,10 +221,10 @@ footer = html.Div(className="foot", children=[
             html.Div(className="eight columns", children=[
                 html.H5("About:"),
                 html.A("Germain Salvato Vallverdu",
-                        href="https://gsalvatovallverdu.gitlab.io/"),
+                       href="https://gsalvatovallverdu.gitlab.io/"),
                 html.Br(),
-                html.A("University of Pau & Pays Adour", 
-                       href="https://www.univ-pau.fr") 
+                html.A("University of Pau & Pays Adour",
+                       href="https://www.univ-pau.fr")
             ]),
             html.Div(className="four columns", children=[
                 html.A(href="https://www.univ-pau.fr", children=[
@@ -297,7 +295,7 @@ body = html.Div(className="container", children=[
                     dcc.Dropdown(
                         id='dropdown-colormap',
                         options=[{"label": cm, "value": cm}
-                                 for cm in plt.cm.cmap_d],
+                                 for cm in plt.colormaps()],
                         value="cividis"
                     ),
 
@@ -360,7 +358,8 @@ body = html.Div(className="container", children=[
             html.Div(className="row", children=[
                 # --- select histogram or absicssa
                 html.Div(className="six columns", children=[
-                    html.Span("Histogram or abscissa", className="control-label"),
+                    html.Span("Histogram or abscissa",
+                              className="control-label"),
                     dcc.Dropdown(
                         id="plot-data-selector",
                         options=[{"label": "histogram", "value": "histogram"}],
@@ -461,7 +460,7 @@ def upload_data(content, filename, table_ts, stored_data, table_data,
         # read a default file
         # filename = app.get_asset_url("data/C28-D2.xyz")
         filename = "assets/data/C28-D2.xyz"
-        mol = mg.Molecule.from_file(filename)
+        mol = Molecule.from_file(filename)
 
         if content:
             content_type, content_str = content.split(",")
@@ -469,7 +468,7 @@ def upload_data(content, filename, table_ts, stored_data, table_data,
             decoded = base64.b64decode(content_str).decode("utf-8")
             # fdata = io.StringIO(decoded)
             try:
-                mol = mg.Molecule.from_str(decoded, fmt=ext[1:])
+                mol = Molecule.from_str(decoded, fmt=ext[1:])
             except NameError:
                 # TODO: Manage format error
                 print("Unable to read format")
@@ -481,7 +480,7 @@ def upload_data(content, filename, table_ts, stored_data, table_data,
         ca.data["custom"] = 0.0
 
         # all data for the store component
-        all_data = ca.data.to_dict("records")
+        all_data = ca.data.to_dict(orient="records")
 
         # Set the molecule 3D Viewer component
         dbviewer = dash_bio.Molecule3dViewer(
@@ -789,4 +788,5 @@ def plot_data(selected_data1, data_ts, selected_data2, nbins, data):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    # app.run_server(debug=True, host='127.0.0.1')
+    app.run_server(debug=False)

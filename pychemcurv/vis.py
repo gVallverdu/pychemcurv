@@ -111,7 +111,7 @@ class CurvatureViewer:
             view.add_unitcell()
 
         # resize nglview widget
-        view._remote_call("setSize", targe="Widget", args=[width, height])
+        view._remote_call("setSize", target="Widget", args=[width, height])
 
         return view
 
@@ -201,7 +201,7 @@ class CurvatureViewer:
                              width=width, height=height)
 
         # resize nglview widget
-        view._remote_call("setSize", targe="Widget", args=[width, height])
+        view._remote_call("setSize", target="Widget", args=[width, height])
 
         # set the atom colors
         for iat, val in enumerate(prop_vals):
@@ -213,7 +213,7 @@ class CurvatureViewer:
                                     aspect_ratio=aspect_ratio)
 
         # resize nglview widget
-        view._remote_call("setSize", targe="Widget", args=[width, height])
+        view._remote_call("setSize", target="Widget", args=[width, height])
 
         # place the colorbar in an Output() widget
         out = Output()

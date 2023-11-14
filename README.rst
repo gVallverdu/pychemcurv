@@ -17,7 +17,7 @@ pychemcurv
 
 * `installation <#installation>`_
 * `documentation <https://pychemcurv.readthedocs.io/>`_
-* Dash web application `https://pychemapps.univ-pau.fr/mosaica <https://pychemapps.univ-pau.fr/mosaica/>`_.
+* Dash web application `source code <https://github.com/gVallverdu/pychemcurv-app>`_, `live demo <>`_
 * `Notebooks <https://nbviewer.jupyter.org/github/gVallverdu/pychemcurv/tree/master/notebooks/>`_
 
 pychemcurv is a python package for structural analyzes of molecular systems or
@@ -33,7 +33,7 @@ scale and the hybridization of a given atom. Second, a
 `Plotly/Dash <https://plot.ly/dash/>`_ web
 application is provided in order to perform geometrical and electronic
 analyzes on molecules or materials. The web application is available at
-`pychemcurv.herokuapp.com/ <https://pychemcurv.herokuapp.com/>`_.
+`pychemcurv.onrender.com/ <https://pychemcurv.onrender.com>`_.
 The web-app allows to upload simple xyz files and compute the local geometrical
 properties and the hybridization properties. The application is available
 in a separate repository at `pychemcurv-app <https://github.com/gVallverdu/pychemcurv-app>`_.
@@ -46,7 +46,7 @@ online with `binder <https://mybinder.org/v2/gh/gVallverdu/pychemcurv.git/2020.6
 Citing pychemcurv
 =================
 
-Please, consider to cite the following paper when using either the `pychemcurv`
+Please, consider to cite the following papers when using either the `pychemcurv`
 library or the web application.
 
 Julia Sabalot-Cuzzubbo, Germain Salvato Vallverdu, Didier Bégué and Jacky Cresson
@@ -55,6 +55,14 @@ J. Chem. Phys. **152**, 244310 (2020).
 
 .. image:: https://img.shields.io/badge/DOI-doi.org%2F10.1063%2F5.0008368-blue
     :target: https://aip.scitation.org/doi/10.1063/5.0008368
+    :alt: DOI
+
+Julia Sabalot-Cuzzubbo, N. Cresson, Germain Salvato Vallverdu, Didier Bégué and Jacky Cresson
+*Haddon’s POAV2 vs POAV theory for non-planar molecules*, 
+J. Chem. Phys. **159**, 174109 (2023).
+
+.. image:: https://img.shields.io/badge/DOI-doi.org%2F10.1063%2F5.0008368-blue
+    :target: https://aip.scitation.org/doi/10.1063/5.0170800
     :alt: DOI
 
 Installation

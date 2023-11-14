@@ -32,8 +32,6 @@ setuptools.setup(
     extras_require={
         # for nglview visualization in jupyter notebook
         "viz": ["jupyter", "ase", "nglview"],
-        # to run the dash app locally
-        "app": ["dash", "dash-bio"],
     },
 
     # find_packages()

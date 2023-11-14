@@ -12,7 +12,7 @@ local curvature is then used to compute the hybridization of molecular orbitals.
 
 The main features of the library are available from a 
 `Plotly/Dash <https://plot.ly/dash/>`_ web application available
-here: `pychemcurv.herokuapp.com/ <https://pychemcurv.herokuapp.com/>`_.
+here: `pychemcurv.onrender.com/ <https://pychemcurv.onrender.com>`_.
 The web-app allows to upload simple xyz files and compute the local geometrical
 properties and the hybridization properties. The application source code is available
 in a separate repository at `pychemcurv-app <https://github.com/gVallverdu/pychemcurv-app>`_.
@@ -34,7 +34,7 @@ application is provided in order to perform a geometrical and electronic
 analyzes on molecules or materials.
 
 The web application is available at
-`pychemcurv.herokuapp.com/ <https://pychemcurv.herokuapp.com/>`_.
+`pychemcurv.onrender.com/ <https://pychemcurv.onrender.com>`_.
 The web-app allows to upload simple xyz files and compute the local geometrical
 properties and the hybridization properties. The application source code is available
 in a separate repository at `pychemcurv-app <https://github.com/gVallverdu/pychemcurv-app>`_.
@@ -163,7 +163,7 @@ package and visualize the geometrical or chemical atomic quantities mapped on
 the chemical structure of your system.
 
 The application is available online at this address: 
-`pychemcurv.herokuapp.com/ <https://pychemcurv.herokuapp.com/>`_.
+`pychemcurv.onrender.com/ <https://pychemcurv.onrender.com>`_.
 
 Demo video:
 

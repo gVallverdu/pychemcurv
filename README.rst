@@ -17,7 +17,7 @@ pychemcurv
 
 * `installation <#installation>`_
 * `documentation <https://pychemcurv.readthedocs.io/>`_
-* Dash web application `source code <https://github.com/gVallverdu/pychemcurv-app>`_, `live demo <>`_
+* Dash web application `source code <https://github.com/gVallverdu/pychemcurv-app>`_, `live demo <https://pychemcurv.onrender.com>`_
 * `Notebooks <https://nbviewer.jupyter.org/github/gVallverdu/pychemcurv/tree/master/notebooks/>`_
 
 pychemcurv is a python package for structural analyzes of molecular systems or
@@ -49,21 +49,22 @@ Citing pychemcurv
 Please, consider to cite the following papers when using either the `pychemcurv`
 library or the web application.
 
+.. image:: https://img.shields.io/badge/DOI-doi.org%2F10.1063%2F5.0008368-blue
+    :target: https://aip.scitation.org/doi/10.1063/5.0008368
+    :alt: DOI
+
 Julia Sabalot-Cuzzubbo, Germain Salvato Vallverdu, Didier Bégué and Jacky Cresson
 *Relating the molecular topology and local geometry: Haddon’s pyramidalization angle and the Gaussian curvature*, 
 J. Chem. Phys. **152**, 244310 (2020).
 
+
 .. image:: https://img.shields.io/badge/DOI-doi.org%2F10.1063%2F5.0008368-blue
-    :target: https://aip.scitation.org/doi/10.1063/5.0008368
+    :target: https://aip.scitation.org/doi/10.1063/5.0170800
     :alt: DOI
 
 Julia Sabalot-Cuzzubbo, N. Cresson, Germain Salvato Vallverdu, Didier Bégué and Jacky Cresson
 *Haddon’s POAV2 vs POAV theory for non-planar molecules*, 
 J. Chem. Phys. **159**, 174109 (2023).
-
-.. image:: https://img.shields.io/badge/DOI-doi.org%2F10.1063%2F5.0008368-blue
-    :target: https://aip.scitation.org/doi/10.1063/5.0170800
-    :alt: DOI
 
 Installation
 ============
@@ -105,14 +106,12 @@ provides the ``viz`` and ``app`` extras so, using pip, run one of
 
 :: 
 
-    pip install .[app]
+    pip install .
     # or
     pip install .[viz]
-    # or all extras
-    pip install .[app, viz]
 
     # escape square bracket with zsh
-    pip install .\[app, viz\]
+    pip install .\[viz\]
 
 If you have installed nglview you have to enable the jupyter extension
 
@@ -150,7 +149,7 @@ In order to install in developper mode, first create an environment
 
 ::
 
-    pip install -e .[app, viz]
+    pip install -e .[viz]
 
 
 If you want to build the documentation you also need to install sphinx.

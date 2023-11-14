@@ -7,8 +7,8 @@ The source code of the application is now available
 in a separate repository at [pychemcurv-app](https://github.com/gVallverdu/pychemcurv-app).
 
 The web application is available at
-[pychemcurv.herokuapp.com/](https://pychemcurv.herokuapp.com/).
-The web-app allows to upload simple xyz files and compute the local geometrical
+[pychemcurv.onrender.com/](https://pychemcurv.onrender.com).
+It allows to upload simple xyz files and compute the local geometrical
 properties and the hybridization properties. 
 
 Demo video:

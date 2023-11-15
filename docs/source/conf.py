@@ -20,11 +20,13 @@ sys.path.insert(0, os.path.abspath('../../'))
 
 project = 'pychemcurv'
 copyright = "2020, Université de Pau et des Pays de l'Adour"
-author = 'Germain Salvato Vallverdu'
+author = 'Germain Salvato Vallverdu, Julia Sabalot-cuzzubbo, Dider Bégué, Jacky Cresson'
 
 # The full version, including alpha/beta/rc tags
-from pychemcurv import __version__
-release = __version__
+version = {}
+with open("../../pychemcurv/version.py") as fp:
+    exec(fp.read(), version)
+release = version['__version__']
 
 
 # -- General configuration ---------------------------------------------------

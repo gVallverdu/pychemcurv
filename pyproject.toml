@@ -44,7 +44,7 @@ viz = ["ase", "jupyter", "nglview"]
 "Bug Tracker" = "https://github.com/gVallverdu/pychemcurv/issues"
 
 [tool.setuptools.dynamic]
-version = {attr = "pychemcurv.__version__"}
+version = {attr = "pychemcurv.version.__version__"}
 readme = {file = "README.rst", content-type = "text/x-rst; charset=UTF-8"}
 
 # specific configuration for pytest

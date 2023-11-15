@@ -13,9 +13,10 @@ classes of this module can be found in article [JCP2020]_.
     Haddon’s pyramidalization angle and the Gaussian curvature*, J. Chem. Phys. 
     **152**, 244310 (2020). https://aip.scitation.org/doi/10.1063/5.0008368
 
-.. [POAV2] Julia Sabalot-Cuzzubbo, Germain Salvato Vallverdu, Didier Bégué 
-    and Jacky Cresson *Haddon's POAV2 versus POAV theory for non planar 
-    molecules* (to be published).
+.. [POAV2] Julia Sabalot-Cuzzubbo, N. Cresson, Germain Salvato Vallverdu, Didier
+    Bégué and Jacky Cresson *Haddon’s POAV2 vs POAV theory for non-planar molecules*, 
+    J. Chem. Phys. **159**, 174109 (2023). https://aip.scitation.org/doi/10.1063/5.0170800
+
 """
 
 import numpy as np

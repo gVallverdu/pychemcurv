@@ -26,7 +26,8 @@ POAV stands for :math:`\pi`-Orbital Axis Vector. The definition of this
 vector has its origin in the works of R.C. Haddon. The definitions and the
 relation between POAV and the local curvature of a molecule using new 
 geometrical object such as the angular defect have been established in our
-recent work [JCP2020]_.
+recent work [JCP2020]_. An discussion on the two POAV1 and POAV2 quantities is
+published in the work [POAV2]_.
 
 Hereafter, the two classes POAV1 and POAV2 aim to compute quantities related
 to the two definitions of the POAV vector.

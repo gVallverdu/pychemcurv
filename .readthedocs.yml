@@ -35,7 +35,7 @@ python:
 python:
   install:
     - requirements: docs/requirements.txt
-  # Install our python package before building the docs
-  # needed for autodoc
-  - method: pip
-    path: .
+    # Install our python package before building the docs
+    # needed for autodoc
+    - method: pip
+      path: .

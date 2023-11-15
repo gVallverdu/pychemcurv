@@ -31,10 +31,6 @@ import matplotlib.pyplot as plt
 from pymatgen.core import Molecule, Structure
 from .analysis import CurvatureAnalyzer
 
-__author__ = "Germain Salvato-Vallverdu"
-__copyright__ = "University of Pau and Pays Adour"
-__email__ = "germain.vallverdu@univ-pau.fr"
-
 __all__ = ["CurvatureViewer"]
 
 

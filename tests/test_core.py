@@ -20,11 +20,11 @@ class TestVertexAtom:
 
         self.theta_sp3 = np.arccos(-1 / 3)
         self.theta_sp2 = np.pi / 2
-        self.l = 1.3
+        self.CC_bond = 1.3
 
         # sp3 pyramid
-        coords = [[0, 0, -self.l * np.cos(self.theta_sp3)]]
-        IB = self.l * np.sin(self.theta_sp3)
+        coords = [[0, 0, -self.CC_bond * np.cos(self.theta_sp3)]]
+        IB = self.CC_bond * np.sin(self.theta_sp3)
         for angle in [0, 2 * np.pi / 3, 4 * np.pi / 3]:
             coords.append([IB * np.cos(angle), IB * np.sin(angle), 0])
         coords = np.array(coords, dtype=np.float64)
@@ -32,8 +32,8 @@ class TestVertexAtom:
 
         # squared pyramid
         theta = np.radians(100.0)
-        coords = [[0, 0, -self.l * np.cos(theta)]]
-        IB = self.l * np.sin(theta)
+        coords = [[0, 0, -self.CC_bond * np.cos(theta)]]
+        IB = self.CC_bond * np.sin(theta)
         for i in range(4):
             angle = i * np.pi / 2
             coords.append([IB * np.cos(angle), IB * np.sin(angle), 0])
@@ -82,10 +82,10 @@ class TestVertexAtom:
 
     def test_distances(self):
         for d in self.va_sp3.distances:
-            assert d == approx(self.l)
+            assert d == approx(self.CC_bond)
 
         for d in self.va_sq.distances:
-            assert d == approx(self.l)
+            assert d == approx(self.CC_bond)
 
     def test_normal(self):
         assert self.va_sp3.normal == approx([0., 0., 1.])
@@ -94,19 +94,20 @@ class TestVertexAtom:
 
     def test_pyr_distance(self):
         assert self.va_sp3.pyr_distance == approx(
-            -self.l * np.cos(self.theta_sp3))
+            -self.CC_bond * np.cos(self.theta_sp3))
         assert self.va_sq.pyr_distance == approx(
-            -self.l * np.cos(np.radians(100)))
+            -self.CC_bond * np.cos(np.radians(100)))
 
     def test_from_pyramid(self):
         # sp3 pyramid
-        va = VertexAtom.from_pyramid(self.l, self.theta_sp3, radians=True)
+        va = VertexAtom.from_pyramid(self.CC_bond, self.theta_sp3,
+                                     radians=True)
         assert va.a.shape == (3, )
         assert self.va_sp3.a == approx(va.a)
         assert va.star_a.shape == (3, 3)
         assert self.va_sp3.star_a.flatten() == approx(va.star_a.flatten())
 
-        va = VertexAtom.from_pyramid(self.l, 100, 4, radians=False)
+        va = VertexAtom.from_pyramid(self.CC_bond, 100, 4, radians=False)
         assert va.a.shape == (3,)
         assert va.star_a.shape == (4, 3)
         assert self.va_sq.a == approx(va.a)
@@ -120,11 +121,11 @@ class TestTrivalentVertex:
 
         self.theta_sp3 = np.arccos(-1 / 3)
         self.theta_sp2 = np.pi / 2
-        self.l = 1.3
+        self.CC_bond = 1.3
 
         # sp3 pyramid
-        coords = [[0, 0, -self.l * np.cos(self.theta_sp3)]]
-        IB = self.l * np.sin(self.theta_sp3)
+        coords = [[0, 0, -self.CC_bond * np.cos(self.theta_sp3)]]
+        IB = self.CC_bond * np.sin(self.theta_sp3)
         for angle in [0, 2 * np.pi / 3, 4 * np.pi / 3]:
             coords.append([IB * np.cos(angle), IB * np.sin(angle), 0])
         coords = np.array(coords, dtype=np.float64)
@@ -133,7 +134,9 @@ class TestTrivalentVertex:
         # sp2 case
         coords = [[0, 0, 0]]
         for angle in [0, 2 * np.pi / 3, 4 * np.pi / 3]:
-            coords.append([self.l * np.cos(angle), self.l * np.sin(angle), 0])
+            coords.append([self.CC_bond * np.cos(angle), 
+                           self.CC_bond * np.sin(angle),
+                           0])
         coords = np.array(coords, dtype=np.float64)
         self.va_sp2 = TrivalentVertex(coords[0], coords[1:])
 
@@ -169,20 +172,22 @@ class TestTrivalentVertex:
 
     def test_pyr_distance(self):
         assert self.va_sp2.pyr_distance == approx(0.)
-        dist = self.l * np.sin(self.theta_sp3 - np.pi / 2)
+        dist = self.CC_bond * np.sin(self.theta_sp3 - np.pi / 2)
         assert self.va_sp3.pyr_distance == approx(dist)
         assert self.va_rand.pyr_distance == approx(0.4515551342307116)
 
     def test_from_pyramid(self):
         # sp3 pyramid
-        va = VertexAtom.from_pyramid(self.l, self.theta_sp3, radians=True)
+        va = VertexAtom.from_pyramid(self.CC_bond, self.theta_sp3,
+                                     radians=True)
         assert self.va_sp3.a.shape == (3, )
         assert self.va_sp3.a == approx(va.a)
         assert self.va_sp3.star_a.shape == (3, 3)
         assert self.va_sp3.star_a.flatten() == approx(va.star_a.flatten())
 
         # sp2 case
-        va = VertexAtom.from_pyramid(self.l, self.theta_sp2, radians=True)
+        va = VertexAtom.from_pyramid(self.CC_bond, self.theta_sp2,
+                                     radians=True)
         assert self.va_sp2.a.shape == (3, )
         assert self.va_sp2.a == approx(va.a)
         assert self.va_sp2.star_a.shape == (3, 3)

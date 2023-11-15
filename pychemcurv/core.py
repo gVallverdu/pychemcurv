@@ -22,10 +22,6 @@ import numpy as np
 from scipy.linalg import null_space
 from .geometry import get_plane, circum_center, center_of_mass, get_dihedral
 
-__author__ = "Germain Salvato Vallverdu"
-__copyright__ = "University of Pau and Pays Adour"
-__email__ = "germain.vallverdu@univ-pau.fr"
-
 __all__ = ["VertexAtom", "TrivalentVertex", "POAV1", "POAV2"]
 
 

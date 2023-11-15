@@ -23,7 +23,8 @@ copyright = "2020, Université de Pau et des Pays de l'Adour"
 author = 'Germain Salvato Vallverdu'
 
 # The full version, including alpha/beta/rc tags
-release = '2020.02.03'
+from pychemcurv import __version__
+release = __version__
 
 
 # -- General configuration ---------------------------------------------------

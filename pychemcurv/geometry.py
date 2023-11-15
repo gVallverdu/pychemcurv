@@ -7,10 +7,6 @@ properties.
 
 import numpy as np
 
-__author__ = "Germain Salvato-Vallverdu"
-__copyright__ = "University of Pau and Pays Adour"
-__email__ = "germain.vallverdu@univ-pau.fr"
-
 __all__ = ["center_of_mass", "circum_center", "get_plane", "get_dihedral"]
 
 

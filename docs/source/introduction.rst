@@ -50,93 +50,82 @@ online with `binder <https://mybinder.org/>`_.
 Citing pychemcurv
 =================
 
-Please, consider to cite the following paper when using either the `pychemcurv`
+Please, consider to cite the following papers when using either the `pychemcurv`
 library or the web application.
-
-Julia Sabalot-Cuzzubbo, Germain Salvato Vallverdu, Didier Bégué and Jacky Cresson
-*Relating the molecular topology and local geometry: Haddon’s pyramidalization angle and the Gaussian curvature*, 
-J. Chem. Phys. **152**, 244310 (2020).
 
 .. image:: https://img.shields.io/badge/DOI-doi.org%2F10.1063%2F5.0008368-blue
     :target: https://aip.scitation.org/doi/10.1063/5.0008368
     :alt: DOI
 
+Julia Sabalot-Cuzzubbo, Germain Salvato Vallverdu, Didier Bégué and Jacky Cresson
+*Relating the molecular topology and local geometry: Haddon’s pyramidalization angle and the Gaussian curvature*, 
+J. Chem. Phys. **152**, 244310 (2020).
+
+
+.. image:: https://img.shields.io/badge/DOI-doi.org%2F10.1063%2F5.0008368-blue
+    :target: https://aip.scitation.org/doi/10.1063/5.0170800
+    :alt: DOI
+
+Julia Sabalot-Cuzzubbo, N. Cresson, Germain Salvato Vallverdu, Didier Bégué and Jacky Cresson
+*Haddon’s POAV2 vs POAV theory for non-planar molecules*, 
+J. Chem. Phys. **159**, 174109 (2023).
 
 Installation
 ============
 
-Before installing pychemcurv it is recommanded to create a virtual environment 
+Installation from PyPi
+----------------------
+
+From November 2023, ``pychemcurv`` is available on pypi. You can install it 
+directly using pip.
+
+.. code-block:: bash
+
+    python -m pip install pychemcurv
+
+
+Installation from source
+------------------------
+
+Before installing ``pychemcurv`` it is recommanded to create a virtual environment 
 using conda or virtuelenv.
 
-Short installation
-------------------
+In this environment, using pip directly from the github repository, run
 
-Using pip directly from github, run
-
-::
+.. code-block:: bash
 
     pip install git+git://github.com/gVallverdu/pychemcurv.git
 
 
 Alternatively, you can first clone the pychemcurv repository
 
-:: 
+.. code-block:: bash
 
     git clone https://github.com/gVallverdu/pychemcurv.git
 
 and then install the module and its dependencies using
 
-::
+.. code-block:: bash
 
     pip install .
-
-
-
-Full installation
------------------
 
 If you want to use the web application locally or if you want to use
 `nglview <https://github.com/arose/nglview>`_ to display structures in 
 jupyter notebooks you need to install more dependencies. The setup configuration
-provides the ``viz`` and ``app`` extras so, using pip, run one of
+provides the ``viz`` extra so, using pip, run one of
 
-:: 
+.. code-block:: bash
 
-    pip install .[app]
-    # or
     pip install .[viz]
-    # or all extras
-    pip install .[app, viz]
 
     # escape square bracket with zsh
-    pip install .\[app, viz\]
+    pip install .\[viz\]
 
-If you have installed nglview you have to enable the jupyter extension
+If you have installed nglview you may have to enable the jupyter extension
 
-::
+.. code-block:: bash
 
     jupyter-nbextension enable nglview --py --sys-prefix
-
-
-The files ``requirements.txt`` and ``environment.yml`` are provided to setup
-a full environment with all dependencies. Using pip, in a new environment
-you can run the following command to install dependencies
-
-::
-
-    pip install -r requirements.txt
-
-or using ``conda`` you can create the new environment and install all
-dependencies in one shot by
-
-::
-
-    conda env create -f environment.yml
-
-
-The name of the new environment is ``curv``.
-
-Do not forget to enable the jupyter nglview extension (see above).
 
 
 Install in developper mode
@@ -145,12 +134,13 @@ Install in developper mode
 In order to install in developper mode, first create an environment
 (using one of the provided file for example) and then install using pip
 
-::
+.. code-block:: bash
 
-    pip install -e .[app, viz]
+    pip install -e .[viz]
 
 
 If you want to build the documentation you also need to install sphinx.
+A dedicated requirements file is provided in the ``docs/`` folder.
     
 
 Run the web application
@@ -172,23 +162,18 @@ Demo video:
     <iframe width="560" height="315" src="https://www.youtube.com/embed/q7UO5Gou-lw" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 
-In order to run the application locally, you have to install all the dependencies
-and in particular ``dash`` and ``dash-bio``. You can do that from the files
-``requirements.txt`` or ``environment.yml`` or directly using ``pip``.
+In order to run the application locally, you have to clone the repository and 
+install all the dependencies. In particular ``dash`` and ``dash-bio``.
+You can do that from the ``requirements.txt`` provided in the repository of the
+application. Here is a short procedure in order to install and run the application
+locally. It assumes ``pychemcurv`` is already installed in a python environment 
+called ``(curv)``:
 
-Then, clone the github repository on your computer
-
-::
-
-    git clone https://github.com/gVallverdu/pychemcurv-app.git
-
-
-To run the application, change to the ``pychemcurv-app/`` directory and run the 
-``app.py`` file.
-
-::
-
+.. code-block:: bash
+    
+    [user@computer] (curv) > $ git clone https://github.com/gVallverdu/pychemcurv-app.git
     [user@computer] (curv) > $ cd pychemcurv-app/
+    [user@computer] (curv) > $ python -m pip install -r requirements.txt
     [user@computer] (curv) > $ python app.py
     Running on http://127.0.0.1:8050/
     Debugger PIN: 065-022-191
@@ -200,7 +185,7 @@ To run the application, change to the ``pychemcurv-app/`` directory and run the
 
 Open the provided url to use the application.
 
-You can switch off the debug mode by setting ``debug=False`` on the last line of 
+You can switch off/on the debug mode by setting ``debug=False`` on the last line of 
 the ``app.py`` file.
 
 Common error on local execution
